@@ -3,22 +3,30 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VoxelCraft Pro Ultra Performance Engine</title>
+    <title>QuantumVoxel Engine Pro v4.1 - Smooth Memory Management</title>
     <style>
+        :root {
+            --ui-bg-dark: rgba(16, 16, 20, 0.95);
+            --ui-bg-light: #c6c6c6;
+            --ui-border-highlight: #00ffcc;
+            --ui-mc-gray: #2d2d2d;
+            --font-monospace: 'Courier New', Courier, monospace;
+        }
         * {
             box-sizing: border-box;
             user-select: none;
             margin: 0;
             padding: 0;
+            -webkit-user-drag: none;
         }
         body, html {
             width: 100%;
             height: 100%;
             overflow: hidden;
-            background-color: #8cb1fc;
+            background-color: #0b0e14;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
-        #canvas-viewport {
+        #viewport-canvas-container {
             width: 100%;
             height: 100%;
             position: absolute;
@@ -26,68 +34,72 @@
             left: 0;
             z-index: 1;
         }
-        #crosshair-pointer {
+        #hud-crosshair {
             position: absolute;
             top: 50%;
             left: 50%;
-            width: 18px;
-            height: 18px;
+            width: 20px;
+            height: 20px;
             transform: translate(-50%, -50%);
             pointer-events: none;
             z-index: 10;
         }
-        #crosshair-pointer::before, #crosshair-pointer::after {
+        #hud-crosshair::before, #hud-crosshair::after {
             content: '';
             position: absolute;
-            background: rgba(255, 255, 255, 0.9);
+            background: #ffffff;
             mix-blend-mode: difference;
         }
-        #crosshair-pointer::before {
-            top: 8px;
+        #hud-crosshair::before {
+            top: 9px;
             left: 0;
-            width: 18px;
+            width: 20px;
             height: 2px;
         }
-        #crosshair-pointer::after {
+        #hud-crosshair::after {
             top: 0;
-            left: 8px;
+            left: 9px;
             width: 2px;
-            height: 18px;
+            height: 20px;
         }
-        #hud-dashboard {
+        #diagnostic-overlay {
             position: absolute;
             top: 15px;
             left: 15px;
             z-index: 5;
             color: #ffffff;
-            font-family: 'Courier New', Courier, monospace;
-            font-size: 13px;
-            text-shadow: 1px 1px 2px #000000;
-            background: rgba(20, 20, 20, 0.75);
-            padding: 12px;
-            border-radius: 4px;
+            font-family: var(--font-monospace);
+            font-size: 12px;
+            text-shadow: 2px 2px 0px #000000;
+            background: rgba(0, 0, 0, 0.65);
+            padding: 15px;
+            border-radius: 6px;
             border: 1px solid rgba(255, 255, 255, 0.15);
             pointer-events: none;
             line-height: 1.6;
         }
-        #hotbar-wrapper {
+        .hud-accent {
+            color: var(--ui-border-highlight);
+            font-weight: bold;
+        }
+        #hotbar-screen-container {
             position: absolute;
-            bottom: 15px;
+            bottom: 20px;
             left: 50%;
             transform: translateX(-50%);
             z-index: 5;
-            background: rgba(35, 35, 35, 0.9);
-            border: 3px solid #3c3c3c;
+            background: rgba(30, 30, 30, 0.92);
+            border: 4px solid #4a4a4a;
             border-radius: 4px;
             display: flex;
             padding: 4px;
-            box-shadow: 0px 8px 16px rgba(0,0,0,0.6);
+            box-shadow: 0px 12px 24px rgba(0,0,0,0.75);
         }
-        .hotbar-slot-node {
-            width: 46px;
-            height: 46px;
-            border: 3px solid #777777;
-            background-color: #222222;
+        .hotbar-slot-frame {
+            width: 52px;
+            height: 52px;
+            border: 4px solid #8b8b8b;
+            background-color: #313131;
             margin: 0 3px;
             display: flex;
             align-items: center;
@@ -95,120 +107,103 @@
             position: relative;
             cursor: pointer;
             border-radius: 2px;
+            box-shadow: inset 0 0 6px rgba(0,0,0,0.6);
         }
-        .hotbar-slot-node.active-slot {
-            border-color: #00ffcc;
-            box-shadow: 0 0 8px #00ffcc;
+        .hotbar-slot-frame.selected-active {
+            border-color: var(--ui-border-highlight);
+            box-shadow: 0 0 12px var(--ui-border-highlight), inset 0 0 4px rgba(0,0,0,0.5);
         }
-        .node-preview {
-            width: 28px;
-            height: 28px;
+        .v-item-preview {
+            width: 32px;
+            height: 32px;
+            image-rendering: pixelated;
+            transition: transform 0.1s ease;
         }
-        .node-index {
+        .hotbar-slot-frame:hover .v-item-preview {
+            transform: scale(1.1);
+        }
+        .slot-index-indicator {
             position: absolute;
-            top: 1px;
-            left: 3px;
-            font-size: 9px;
-            color: #bbbbbb;
+            top: 2px;
+            left: 4px;
+            font-size: 10px;
+            color: #dddddd;
+            font-family: sans-serif;
             font-weight: bold;
+            text-shadow: 1px 1px 1px #000;
         }
-        .ui-overlay-panel {
+        .full-screen-modal-dimmer {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.65);
+            background: rgba(0, 0, 0, 0.7);
             z-index: 100;
             display: none;
             align-items: center;
             justify-content: center;
+            backdrop-filter: blur(4px);
         }
-        .window-frame {
-            width: 500px;
-            background: #2d2d2d;
-            border: 3px solid #555555;
-            border-radius: 6px;
+        .gui-window-panel {
+            width: 620px;
+            background: #c6c6c6;
+            border: 5px solid #373737;
+            border-top-color: #ffffff;
+            border-left-color: #ffffff;
             padding: 25px;
-            box-shadow: 0 15px 35px rgba(0,0,0,0.7);
-            color: #ffffff;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.8);
+            position: relative;
         }
-        .frame-title {
+        .gui-window-title {
             font-size: 18px;
-            color: #00ffcc;
+            color: #2c2c2c;
             font-weight: bold;
             margin-bottom: 20px;
             text-transform: uppercase;
             letter-spacing: 1px;
-            border-bottom: 2px solid #444;
-            padding-bottom: 8px;
+            font-family: sans-serif;
+            border-bottom: 3px solid #8b8b8b;
+            padding-bottom: 6px;
         }
-        .settings-grid {
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-            margin-bottom: 20px;
-        }
-        .settings-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: #363636;
-            padding: 10px 15px;
-            border-radius: 4px;
-        }
-        .settings-label {
-            font-size: 14px;
-            font-weight: 500;
-        }
-        .settings-control select, .settings-control input {
-            background: #222;
-            color: #fff;
-            border: 1px solid #555;
-            padding: 6px 12px;
-            border-radius: 4px;
-            cursor: pointer;
-            outline: none;
-        }
-        .settings-control select:hover {
-            border-color: #00ffcc;
-        }
-        .catalog-grid {
+        .creative-inventory-scroll-grid {
             display: grid;
-            grid-template-columns: repeat(5, 1fr);
+            grid-template-columns: repeat(7, 1fr);
             gap: 12px;
-            max-height: 280px;
-            overflow-y: auto;
-            background: #1e1e1e;
-            padding: 12px;
-            border-radius: 4px;
-            border: 1px solid #444;
+            max-height: 360px;
+            overflow-y: scroll;
+            background: #8b8b8b;
+            padding: 15px;
+            border: 4px solid #ffffff;
+            border-top-color: #373737;
+            border-left-color: #373737;
         }
-        .catalog-item-card {
+        .creative-item-tile-node {
             aspect-ratio: 1;
-            background: #2a2a2a;
-            border: 2px solid #444;
-            border-radius: 4px;
+            background: #8b8b8b;
+            border: 3px solid #373737;
+            border-top-color: #ffffff;
+            border-left-color: #ffffff;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            padding: 8px;
-            transition: all 0.15s ease;
+            padding: 6px;
+            position: relative;
         }
-        .catalog-item-card:hover {
-            background: #333;
-            border-color: #00ffcc;
-            transform: scale(1.03);
+        .creative-item-tile-node:hover {
+            background: #9e9e9e;
+            border-color: #ffffff;
+            border-top-color: #373737;
+            border-left-color: #373737;
         }
-        .catalog-item-card .node-preview {
-            width: 36px;
-            height: 36px;
-        }
-        .card-label {
-            font-size: 10px;
-            color: #ccc;
+        .tile-node-label {
+            font-size: 9px;
+            color: #ffffff;
+            background: rgba(0,0,0,0.75);
+            padding: 2px 4px;
+            border-radius: 2px;
             margin-top: 6px;
             text-align: center;
             width: 100%;
@@ -216,134 +211,175 @@
             overflow: hidden;
             text-overflow: ellipsis;
         }
-        #system-blocker-screen {
+        .settings-vertical-stack {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .settings-interactive-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #b8b8b8;
+            padding: 12px 20px;
+            border: 3px solid #ffffff;
+            border-top-color: #777777;
+            border-left-color: #777777;
+        }
+        .settings-row-label {
+            font-size: 14px;
+            color: #111111;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        .settings-input-element select, .settings-input-element input[type="range"] {
+            background: #313131;
+            color: #00ffcc;
+            border: 2px solid #8b8b8b;
+            padding: 6px 12px;
+            font-family: var(--font-monospace);
+            font-weight: bold;
+            outline: none;
+            cursor: pointer;
+        }
+        .gui-primary-button {
+            background: #4caf50;
+            color: white;
+            border: 3px solid #373737;
+            border-top-color: #81c784;
+            border-left-color: #81c784;
+            padding: 12px 30px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 20px;
+            width: 100%;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .gui-primary-button:hover {
+            background: #43a047;
+        }
+        #main-engine-blocker-screen {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(10, 10, 10, 0.9);
+            background: radial-gradient(circle, #1a2230 0%, #080b11 100%);
             z-index: 200;
             display: flex;
             align-items: center;
             justify-content: center;
             color: #ffffff;
-            text-align: center;
         }
-        .launcher-box {
-            background: #1f1f1f;
-            border: 2px solid #333;
-            padding: 45px;
+        .menu-launcher-panel {
+            background: rgba(20, 24, 33, 0.95);
+            border: 3px solid #2e3c54;
+            padding: 50px;
             border-radius: 8px;
-            box-shadow: 0 0 40px rgba(0,0,0,0.8);
-            max-width: 520px;
+            box-shadow: 0 0 60px rgba(0,0,0,0.85);
+            max-width: 600px;
             width: 100%;
-        }
-        .action-btn {
-            background: #00ffcc;
-            color: #111;
-            border: none;
-            padding: 14px 45px;
-            font-size: 16px;
-            font-weight: bold;
-            margin-top: 25px;
-            cursor: pointer;
-            border-radius: 4px;
-            transition: all 0.2s ease;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-        .action-btn:hover {
-            background: #00ccaa;
-            box-shadow: 0 0 15px rgba(0,255,204,0.4);
-        }
-        .footer-close-tip {
-            font-size: 12px; 
-            color: #888; 
-            margin-top: 15px; 
-            font-weight: bold;
             text-align: center;
+        }
+        .controls-legend-box {
+            text-align: left;
+            background: #0f131a;
+            padding: 20px;
+            border-radius: 6px;
+            border: 1px solid #222d3d;
+            font-family: var(--font-monospace);
+            font-size: 13px;
+            line-height: 1.8;
+            margin: 25px 0;
         }
     </style>
 </head>
 <body>
 
-    <div id="canvas-viewport"></div>
-    <div id="crosshair-pointer"></div>
+    <div id="viewport-canvas-container"></div>
+    <div id="hud-crosshair"></div>
 
-    <div id="hud-dashboard">
-        <strong>VOXEL ENGINE ULTRA v3.0</strong><br>
-        <span id="stat-fps">FPS: --</span><br>
-        <span id="stat-xyz">XYZ: 0.00 / 0.00 / 0.00</span><br>
-        <span id="stat-chunk-id">Chunk Vector: [0, 0]</span><br>
-        <span id="stat-cached-blocks">Allocated Cells: 0</span><br>
-        <span id="stat-mode">Render Mode: Standard Buffer</span>
+    <div id="diagnostic-overlay">
+        <strong>ENGINE ARCHITECTURE V4.1 CORE</strong><br>
+        FPS Metrics: <span id="val-fps" class="hud-accent">--</span><br>
+        Player Coordinates: <span id="val-xyz" class="hud-accent">0.00 / 0.00 / 0.00</span><br>
+        Active Sub-Chunk: <span id="val-chunk-id" class="hud-accent">[0, 0, 0]</span><br>
+        Voxel Draw Count: <span id="val-draw-count" class="hud-accent">0</span><br>
+        Storage Grid Load: <span id="val-hash-load" class="hud-accent">0 entries</span><br>
+        Frustum Culled: <span id="val-culled-chunks" class="hud-accent">0 modules</span><br>
+        Memory Capacity: <span id="val-mem-use" class="hud-accent">Aggressive Destructor Active</span>
     </div>
 
-    <div id="settings-menu-overlay" class="ui-overlay-panel">
-        <div class="window-frame">
-            <div class="frame-title">System Graphics Settings</div>
-            <div class="settings-grid">
-                <div class="settings-row">
-                    <div class="settings-label">Render Distance (Chunks)</div>
-                    <div class="settings-control">
-                        <select id="setting-render-distance">
-                            <option value="1">1 Chunk (Ultra Low End)</option>
-                            <option value="2" selected>2 Chunks (Balanced Laptop)</option>
-                            <option value="3">3 Chunks (Standard)</option>
-                            <option value="4">4 Chunks (High Performance)</option>
+    <div id="modal-creative-inventory" class="full-screen-modal-dimmer">
+        <div class="gui-window-panel">
+            <div class="gui-window-title">Item Registry & Block Catalog</div>
+            <div class="creative-inventory-scroll-grid" id="dom-catalog-grid-wrapper"></div>
+            <button class="gui-primary-button" id="btn-close-creative-gui">Resume Simulation</button>
+            <div style="font-size:11px; color:#555; font-weight:bold; margin-top:10px; text-align:center;">Press [ E ] key sequence to return immediately</div>
+        </div>
+    </div>
+
+    <div id="modal-system-settings" class="full-screen-modal-dimmer">
+        <div class="gui-window-panel">
+            <div class="gui-window-title">System Execution Controls</div>
+            <div class="settings-vertical-stack">
+                <div class="settings-interactive-row">
+                    <div class="settings-row-label">Render Distance (Radius Chunks)</div>
+                    <div class="settings-input-element">
+                        <select id="config-render-distance">
+                            <option value="1">1 Chunk Module (Ultra Performance Fallback)</option>
+                            <option value="2" selected>2 Chunk Modules (Low-End Hardware Standard)</option>
+                            <option value="3">3 Chunk Modules (Balanced Desktop)</option>
+                            <option value="4">4 Chunk Modules (High Performance Mode)</option>
                         </select>
                     </div>
                 </div>
-                <div class="settings-row">
-                    <div class="settings-label">Performance Geometry Optimization</div>
-                    <div class="settings-control">
-                        <select id="setting-culling-mode">
-                            <option value="aggressive" selected>Aggressive Occlusion (Less Lag)</option>
-                            <option value="standard">Standard Occlusion</option>
+                <div class="settings-interactive-row">
+                    <div class="settings-row-label">Occlusion Face Optimization</div>
+                    <div class="settings-input-element">
+                        <select id="config-occlusion-mode">
+                            <option value="aggressive" selected>Aggressive Bit-Mask Culling (Max FPS)</option>
+                            <option value="standard">Standard Face Validation Pass</option>
                         </select>
                     </div>
                 </div>
-                <div class="settings-row">
-                    <div class="settings-label">Resolution Scaling Factor</div>
-                    <div class="settings-control">
-                        <select id="setting-res-scale">
-                            <option value="0.75">0.75x (Boost FPS)</option>
-                            <option value="1.0" selected>1.0x Native Quality</option>
+                <div class="settings-interactive-row">
+                    <div class="settings-row-label">Device Thread Resolution Scale</div>
+                    <div class="settings-input-element">
+                        <select id="config-res-scale">
+                            <option value="0.5">0.50x Downsampled Execution</option>
+                            <option value="0.75">0.75x Performance Native Optimization</option>
+                            <option value="1.0" selected>1.00x Desktop Native Target Quality</option>
                         </select>
                     </div>
                 </div>
             </div>
-            <button class="action-btn" style="width:100%; margin-top:10px;" id="btn-close-settings">Save and Resume</button>
-            <div class="footer-close-tip">Press [ ESC ] or [ O ] to quick toggle options</div>
+            <button class="gui-primary-button" id="btn-close-settings-gui">Apply System Settings Changes</button>
+            <div style="font-size:11px; color:#555; font-weight:bold; margin-top:10px; text-align:center;">Press [ O ] key configuration to save changes instantly</div>
         </div>
     </div>
 
-    <div id="creative-hub-overlay" class="ui-overlay-panel">
-        <div class="window-frame">
-            <div class="frame-title">Creative Hub Selection</div>
-            <div class="catalog-grid" id="catalog-dom-grid"></div>
-            <button class="action-btn" style="width:100%; margin-top:15px;" id="btn-close-hub">Return To Build</button>
-            <div class="footer-close-tip">Press [ E ] to quickly toggle block hub panel</div>
-        </div>
-    </div>
+    <div id="hotbar-screen-container"></div>
 
-    <div id="hotbar-wrapper"></div>
-
-    <div id="system-blocker-screen">
-        <div class="launcher-box">
-            <h1 style="margin: 0 0 10px 0; color: #00ffcc; font-size: 28px; letter-spacing: 1px;">VOXELCRAFT LITE</h1>
-            <p style="color: #888; margin: 0 0 25px 0; font-size: 14px;">Lag-Free Voxel Module Optimization Engine Pipeline.</p>
-            <div style="text-align: left; background: #141414; padding: 18px; font-family: monospace; font-size: 13px; line-height: 1.7; border-radius: 4px; border: 1px solid #2a2a2a; margin-bottom: 10px;">
-                • <b style="color:#00ffcc;">W, A, S, D</b> : Navigation controls (Fully Fixed Map Vector)<br>
-                • <b style="color:#00ffcc;">SPACEBAR</b> : Vertical Jump Translation Force<br>
-                • <b style="color:#00ffcc;">LEFT CLICK</b> : Instant Destruct Crosshair Voxel Block<br>
-                • <b style="color:#00ffcc;">RIGHT CLICK</b> : Build Target Face Voxel Block<br>
-                • <b style="color:#00ffcc;">E KEY</b> : Open Creative Hub Item Registry Catalog<br>
-                • <b style="color:#00ffcc;">O KEY</b> : Open Performance Options & Render Distance Panel<br>
-                • <b style="color:#00ffcc;">1 - 5 NUMBERS</b> : Hotbar Block Allocation Slots Selector
+    <div id="main-engine-blocker-screen">
+        <div class="menu-launcher-panel">
+            <h1 style="margin:0 0 5px 0; color:#00ffcc; font-size:32px; letter-spacing:2px;">QUANTUMVOXEL ENGINE</h1>
+            <p style="color:#6d7f99; font-size:13px; text-transform:uppercase; letter-spacing:1px;">Production Framework Array System</p>
+            
+            <div class="controls-legend-box">
+                <span style="color:#00ffcc; font-weight:bold;">[ W, S ]</span> : Forward / Backward Translational Vectors<br>
+                <span style="color:#00ffcc; font-weight:bold;">[ A, D ]</span> : Left / Right Side-Step Navigation (<span style="color:#ffcc00; font-weight:bold;">Fully Correlated</span>)<br>
+                <span style="color:#00ffcc; font-weight:bold;">[ SPACEBAR ]</span> : Vertical Elevation Vector Jump Force Acceleration<br>
+                <span style="color:#00ffcc; font-weight:bold;">[ LEFT CLICK ]</span> : Break Target Crosshair Highlighted Voxel Node<br>
+                <span style="color:#00ffcc; font-weight:bold;">[ RIGHT CLICK ]</span> : Build Hotbar Voxel Block against Target Intersection Face<br>
+                <span style="color:#00ffcc; font-weight:bold;">[ E ] KEY</span> : Open Creative Catalog Registry Overlay Menu System<br>
+                <span style="color:#00ffcc; font-weight:bold;">[ O ] KEY</span> : Open Advanced System Graphics Optimization Controls Menu<br>
+                <span style="color:#00ffcc; font-weight:bold;">[ 1 - 5 ] KEYS</span> : Cycle Selected Hotbar Active Buffer Block Pointers
             </div>
-            <button class="action-btn" id="btn-initialize-world">Spawn Into World</button>
+
+            <button class="gui-primary-button" id="btn-trigger-bootstrap-sequence" style="font-size:16px; padding:16px 40px;">Initialize Engine Sandbox Pipeline</button>
         </div>
     </div>
 
@@ -351,721 +387,754 @@
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/PointerLockControls.js"></script>
 
     <script>
-        /**
-         * GLOBAL ENGINE RUNTIME ARCHITECTURE SPECIFICATIONS
-         */
-        const ENGINE_CONFIG = {
-            CHUNK_SIZE: 16,
-            CHUNK_HEIGHT: 32,
-            PLAYER_RADIUS: 0.28,
-            PLAYER_HEIGHT: 1.62,
-            GRAVITY: 21.0,
-            MAX_FALL_SPEED: 45.0,
-            WALK_VELOCITY: 6.2,
-            JUMP_IMPULSE: 7.2,
-            REACH_DISTANCE: 6.0
+        const SYSTEM_CONSTANTS = {
+            CHUNK_SIZE_X: 16,
+            CHUNK_SIZE_Z: 16,
+            CHUNK_SIZE_Y: 16,
+            WORLD_MAX_CHUNKS_Y: 4, 
+            TOTAL_WORLD_HEIGHT: 64,
+            PLAYER_COLLISION_RADIUS: 0.26,
+            PLAYER_PHYSICAL_HEIGHT: 1.60,
+            PHYSICAL_GRAVITY_ACCEL: 24.0,
+            PHYSICAL_TERMINAL_VELOCITY: 55.0,
+            PLAYER_HORIZONTAL_WALK_SPEED: 6.8,
+            PLAYER_VERTICAL_JUMP_VELOCITY: 7.8,
+            MAX_RAYCAST_REACH_LIMIT: 7.0
         };
 
-        // Complete Optimized Structural Registry Matrix Mapping Definitions
-        const BlockSystemRegistry = {
-            1: { name: "Grass Block", color: 0x5c8e32, solid: true },
-            2: { name: "Soil Dirt",   color: 0x866043, solid: true },
-            3: { name: "Grey Stone",  color: 0x737373, solid: true },
-            4: { name: "Wood Log",    color: 0x6b4e31, solid: true },
-            5: { name: "Leaf Bush",   color: 0x3c6424, solid: true },
-            6: { name: "Craft Plank", color: 0xbfa26f, solid: true },
-            7: { name: "Glass Layer", color: 0xdff5f5, solid: true },
-            8: { name: "Water Fluid", color: 0x4775c4, solid: false },
-            9: { name: "Clay Brick",  color: 0xb0433a, solid: true },
-            10: { name: "Gold Alloy", color: 0xfccb42, solid: true }
+        const EngineGlobalVoxelRegistry = {
+            1:  { id: 1,  name: "Grass Cover Voxel",    color: 0x4caf50, isSolid: true,  opacity: 1.0 },
+            2:  { id: 2,  name: "Topsoil Dirt Voxel",    color: 0x795548, isSolid: true,  opacity: 1.0 },
+            3:  { id: 3,  name: "Subsurface Hardstone",  color: 0x9e9e9e, isSolid: true,  opacity: 1.0 },
+            4:  { id: 4,  name: "Bedrock Foundation",    color: 0x212121, isSolid: true,  opacity: 1.0 },
+            5:  { id: 5,  name: "Structural Oak Log",    color: 0x5d4037, isSolid: true,  opacity: 1.0 },
+            6:  { id: 6,  name: "Dense Canopy Leaves",   color: 0x2e7d32, isSolid: true,  opacity: 0.85 },
+            7:  { id: 7,  name: "Refinement Timber Plank",color: 0xd7ccc8, isSolid: true,  opacity: 1.0 },
+            8:  { id: 8,  name: "Coastal Sand Deposits", color: 0xfff59d, isSolid: true,  opacity: 1.0 },
+            9:  { id: 9,  name: "Liquid Water Element",  color: 0x2196f3, isSolid: false, opacity: 0.60 },
+            10: { id: 10, name: "Industrial Kiln Brick", color: 0xe53935, isSolid: true,  opacity: 1.0 },
+            11: { id: 11, name: "Solid Matrix Gold Block",color: 0xffd54f, isSolid: true,  opacity: 1.0 },
+            12: { id: 12, name: "Obsidian Core Volcanic", color: 0x120c1f, isSolid: true,  opacity: 1.0 },
+            13: { id: 13, name: "Subterranean Coal Ore",  color: 0x37474f, isSolid: true,  opacity: 1.0 },
+            14: { id: 14, name: "Luminous Glowstone",    color: 0xffb74d, isSolid: true,  opacity: 1.0 },
+            15: { id: 15, name: "Laboratory Glass Pane", color: 0xe0f7fa, isSolid: true,  opacity: 0.40 }
         };
 
-        // Engine State Architecture Vectors
-        let viewportContainer, gameScene, mainCamera, webglRenderer, navigationControls;
-        let globalBlockMatrixData = {}; 
-        let globalChunkMeshNodeMap = {};  
-        let runtimeHotbarArray = [1, 2, 3, 4, 7]; 
-        let currentHotbarSelectedIdx = 0;
-        
-        // Modal Flags States
-        let isCreativeHubPanelOpen = false;
-        let isSettingsPanelOpen = false;
-        
-        // Diagnostic Metric Tracking Counters
-        let systemFramesCounter = 0, systemLastFpsTimestamp = 0;
+        const RuntimeEngineGlobalStateVariables = {
+            viewportDomContainerRef: null,
+            threeJsSceneInstance: null,
+            threeJsMainCameraInstance: null,
+            threeJsRendererInstance: null,
+            pointerLockControlsInstance: null,
+            isCreativeCatalogPanelActive: false,
+            isSettingsControlPanelActive: false,
+            currentActiveHotbarArray: [1, 2, 3, 5, 15],
+            currentActiveHotbarSelectionIdx: 0,
+            rollingFrameCounterMetric: 0,
+            lastFrameMetricsCollectionTimestamp: 0,
+            cachedTotalRenderedVoxelsCount: 0,
+            cachedCulledModulesCount: 0,
+            systemConfigRadiusRenderDistance: 2,
+            systemConfigAggressiveCullingActive: true,
+            deviceThreadResolutionScaleFactor: 1.0
+        };
 
-        // Dynamic System Adjustable Properties Models
-        let activeRenderDistanceSetting = 2;
-        let activeAggressiveCullingSetting = true;
+        const ActorKineticTranslationalState = {
+            keyStateForwardActive: false,
+            keyStateBackwardActive: false,
+            keyStateLeftActive: false,
+            keyStateRightActive: false,
+            actorIsOnGroundAnchor: false,
+            actorCurrentVelocityVector: new THREE.Vector3(),
+            frameDeltaClockInstance: new THREE.Clock()
+        };
 
-        // Actor Mechanics Translational Vectors
-        let inputStateForward = false, inputStateBackward = false, inputStateLeft = false, inputStateRight = false;
-        let actorStateIsOnGround = false;
-        const actorMovementVelocity = new THREE.Vector3();
-        const systemClock = new THREE.Clock();
-
-        // High-Speed Math Noise Implementation Object
-        const InternalProceduralNoiseGenerator = {
-            hashTable: new Uint8Array(512),
-            isReady: false,
-            init: function() {
-                const intermediateBuffer = new Uint8Array(256);
-                for (let i = 0; i < 256; i++) intermediateBuffer[i] = i;
+        const HighSpeedMathematicalNoiseMachine = {
+            permutationLookupArray: new Uint8Array(512),
+            initializationVectorCompleted: false,
+            initializeNoiseGenerativeBuffers: function() {
+                const intermediateFisherYatesArray = new Uint8Array(256);
+                for (let i = 0; i < 256; i++) intermediateFisherYatesArray[i] = i;
                 for (let i = 255; i > 0; i--) {
-                    const swapIdx = Math.floor(Math.random() * (i + 1));
-                    const temporaryHold = intermediateBuffer[i];
-                    intermediateBuffer[i] = intermediateBuffer[swapIdx];
-                    intermediateBuffer[swapIdx] = temporaryHold;
+                    const j = Math.floor(Math.random() * (i + 1));
+                    const temp = intermediateFisherYatesArray[i];
+                    intermediateFisherYatesArray[i] = intermediateFisherYatesArray[j];
+                    intermediateFisherYatesArray[j] = temp;
                 }
                 for (let i = 0; i < 256; i++) {
-                    this.hashTable[i] = intermediateBuffer[i];
-                    this.hashTable[i + 256] = intermediateBuffer[i];
+                    this.permutationLookupArray[i] = intermediateFisherYatesArray[i];
+                    this.permutationLookupArray[i + 256] = intermediateFisherYatesArray[i];
                 }
-                this.isReady = true;
+                this.initializationVectorCompleted = true;
             },
-            fadeCurve: function(t) { return t * t * t * (t * (t * 6 - 15) + 10); },
-            linearInterpolate: function(t, a, b) { return a + t * (b - a); },
-            calculateGradientFactor: function(hash, x, z) {
-                const mask = hash & 7;
-                const coordinateU = mask < 4 ? x : z;
-                const coordinateV = mask < 4 ? z : x;
-                return ((mask & 1) ? -coordinateU : coordinateU) + ((mask & 2) ? -2.0 * coordinateV : 2.0 * coordinateV);
+            computeFadeSCurveValue: function(t) {
+                return t * t * t * (t * (t * 6.0 - 15.0) + 10.0);
             },
-            sampleNoise2D: function(x, z) {
-                const floorX = Math.floor(x) & 255;
-                const floorZ = Math.floor(z) & 255;
-                const localFractionX = x - Math.floor(x);
-                const localFractionZ = z - Math.floor(z);
-                const fadeX = this.fadeCurve(localFractionX);
-                const fadeZ = this.fadeCurve(localFractionZ);
-                
-                const indexAA = this.hashTable[this.hashTable[floorX] + floorZ];
-                const indexAB = this.hashTable[this.hashTable[floorX] + floorZ + 1];
-                const indexBA = this.hashTable[this.hashTable[floorX + 1] + floorZ];
-                const indexBB = this.hashTable[this.hashTable[floorX + 1] + floorZ + 1];
-                
-                return this.linearInterpolate(fadeZ, 
-                    this.linearInterpolate(fadeX, this.calculateGradientFactor(indexAA, localFractionX, localFractionZ), this.calculateGradientFactor(indexBA, localFractionX - 1, localFractionZ)),
-                    this.linearInterpolate(fadeX, this.calculateGradientFactor(indexAB, localFractionX, localFractionZ - 1), this.calculateGradientFactor(indexBB, localFractionX - 1, localFractionZ - 1))
+            computeLinearInterpolationValue: function(t, a, b) {
+                return a + t * (b - a);
+            },
+            computeDotProductGradients: function(hash, x, z) {
+                const h = hash & 7;
+                const u = h < 4 ? x : z;
+                const v = h < 4 ? z : x;
+                return ((h & 1) ? -u : u) + ((h & 2) ? -2.0 * v : 2.0 * v);
+            },
+            sampleNoiseGridCoordinates2D: function(x, z) {
+                if (!this.initializationVectorCompleted) this.initializeNoiseGenerativeBuffers();
+                const X = Math.floor(x) & 255;
+                const Z = Math.floor(z) & 255;
+                const fx = x - Math.floor(x);
+                const fz = z - Math.floor(z);
+                const u = this.computeFadeSCurveValue(fx);
+                const v = this.computeFadeSCurveValue(fz);
+                const aa = this.permutationLookupArray[this.permutationLookupArray[X] + Z];
+                const ab = this.permutationLookupArray[this.permutationLookupArray[X] + Z + 1];
+                const ba = this.permutationLookupArray[this.permutationLookupArray[X + 1] + Z];
+                const bb = this.permutationLookupArray[this.permutationLookupArray[X + 1] + Z + 1];
+                return this.computeLinearInterpolationValue(v,
+                    this.computeLinearInterpolationValue(u, this.computeDotProductGradients(aa, fx, fz), this.computeDotProductGradients(ba, fx - 1.0, fz)),
+                    this.computeLinearInterpolationValue(u, this.computeDotProductGradients(ab, fx, fz - 1.0), this.computeDotProductGradients(bb, fx - 1.0, fz - 1.0))
                 );
             }
         };
-        InternalProceduralNoiseGenerator.init();
 
-        /**
-         * MAIN RUNTIME SYSTEM ENGINE SETUP
-         */
-        function entrypointBootloader() {
-            viewportContainer = document.getElementById('canvas-viewport');
-            
-            gameScene = new THREE.Scene();
-            gameScene.background = new THREE.Color(0x8cb1fc);
-            gameScene.fog = new THREE.FogExp2(0x8cb1fc, 0.03);
+        const SegmentedVoxelDatabaseMemoryManager = {
+            allocatedWorldDataBlocksMap: {}, 
+            compiledGraphicChunkModulesMap: {}, 
 
-            mainCamera = new THREE.PerspectiveCamera(65, window.innerWidth / window.innerHeight, 0.1, 300);
-            mainCamera.position.set(8, 20, 8);
+            generateGlobalKeyCoordinatesHash: function(x, y, z) {
+                return `${x},${y},${z}`;
+            },
+            generateChunkValidationKeyFlag: function(cx, cz) {
+                return `${cx},${cz}_allocated`;
+            },
+            allocateProceduralLandscapeMapDatabaseSegment: function(chunkCoordX, chunkCoordZ) {
+                const trackingKeyFlag = this.generateChunkValidationKeyFlag(chunkCoordX, chunkCoordZ);
+                if (this.allocatedWorldDataBlocksMap[trackingKeyFlag]) return;
 
-            const environmentSunlight = new THREE.DirectionalLight(0xffffff, 0.7);
-            environmentSunlight.position.set(30, 60, 15);
-            gameScene.add(environmentSunlight);
-            gameScene.add(new THREE.AmbientLight(0xffffff, 0.45));
+                const baseCalculationOffsetX = chunkCoordX * SYSTEM_CONSTANTS.CHUNK_SIZE_X;
+                const baseCalculationOffsetZ = chunkCoordZ * SYSTEM_CONSTANTS.CHUNK_SIZE_Z;
 
-            // Low-RAM Performance WebGL Renderer Config
-            webglRenderer = new THREE.WebGLRenderer({ 
-                antialias: false, 
-                powerPreference: "high-performance",
-                precision: "lowp" 
-            });
-            webglRenderer.setSize(window.innerWidth, window.innerHeight);
-            webglRenderer.setPixelRatio(activeRenderDistanceSetting === 1 ? 0.75 : 1.0);
-            viewportContainer.appendChild(webglRenderer.domElement);
+                for (let localX = 0; localX < SYSTEM_CONSTANTS.CHUNK_SIZE_X; localX++) {
+                    for (let localZ = 0; localZ < SYSTEM_CONSTANTS.CHUNK_SIZE_Z; localZ++) {
+                        const globalCoordinateX = baseCalculationOffsetX + localX;
+                        const globalCoordinateZ = baseCalculationOffsetZ + localZ;
 
-            navigationControls = new THREE.PointerLockControls(mainCamera, document.body);
-            
-            document.getElementById('btn-initialize-world').addEventListener('click', () => {
-                if (!isCreativeHubPanelOpen && !isSettingsPanelOpen) navigationControls.lock();
-            });
-            
-            navigationControls.addEventListener('lock', () => {
-                document.getElementById('system-blocker-screen').style.display = 'none';
-            });
-            navigationControls.addEventListener('unlock', () => {
-                if (!isCreativeHubPanelOpen && !isSettingsPanelOpen) {
-                    document.getElementById('system-blocker-screen').style.display = 'flex';
-                }
-            });
+                        const sampledMacroNoiseValue = HighSpeedMathematicalNoiseMachine.sampleNoiseGridCoordinates2D(globalCoordinateX * 0.012, globalCoordinateZ * 0.012) * 22.0;
+                        const sampledMicroNoiseValue = HighSpeedMathematicalNoiseMachine.sampleNoiseGridCoordinates2D(globalCoordinateX * 0.065, globalCoordinateZ * 0.065) * 4.0;
+                        const finalEvaluatedHeightValue = Math.floor(sampledMacroNoiseValue + sampledMicroNoiseValue + 26.0);
+                        const safeClampedSurfaceHeightY = Math.max(2, Math.min(SYSTEM_CONSTANTS.TOTAL_WORLD_HEIGHT - 2, finalEvaluatedHeightValue));
 
-            gameScene.add(navigationControls.getObject());
-
-            registerSystemUIEvents();
-            registerSystemInputBindings();
-            renderEngineHotbarUI();
-            synchronizeActiveChunkMapStreaming();
-
-            window.addEventListener('resize', executeViewportResizeHandler);
-            systemLastFpsTimestamp = performance.now();
-            
-            executeMainEngineRenderLoopTick();
-        }
-
-        /**
-         * ADVANCED DATA ALLOCATION & WORLD STREAMING MANAGEMENT LOGIC
-         */
-        function executeProceduralDataGenerationPass(cx, cz) {
-            const chunkAllocationKeyFlag = `${cx},${cz}_populated`;
-            if (globalBlockMatrixData[chunkAllocationKeyFlag]) return;
-
-            const baseWorldCoordX = cx * ENGINE_CONFIG.CHUNK_SIZE;
-            const baseWorldCoordZ = cz * ENGINE_CONFIG.CHUNK_SIZE;
-
-            for (let x = baseWorldCoordX; x < baseWorldCoordX + ENGINE_CONFIG.CHUNK_SIZE; x++) {
-                for (let z = baseWorldCoordZ; z < baseWorldCoordZ + ENGINE_CONFIG.CHUNK_SIZE; z++) {
-                    
-                    const noiseLayer1 = InternalProceduralNoiseGenerator.sampleNoise2D(x * 0.02, z * 0.02) * 12;
-                    const noiseLayer2 = InternalProceduralNoiseGenerator.sampleNoise2D(x * 0.08, z * 0.08) * 3;
-                    const calculatedSurfaceHeight = Math.floor(noiseLayer1 + noiseLayer2 + 14);
-                    const safeClampedY = Math.max(1, Math.min(ENGINE_CONFIG.CHUNK_HEIGHT - 1, calculatedSurfaceHeight));
-
-                    for (let y = 0; y < ENGINE_CONFIG.CHUNK_HEIGHT; y++) {
-                        const matrixMapKey = `${x},${y},${z}`;
-                        
-                        if (y === safeClampedY) {
-                            if (y < 10) {
-                                globalBlockMatrixData[matrixMapKey] = 2; // Sand table basin
-                            } else {
-                                globalBlockMatrixData[matrixMapKey] = 1; // Topsoil Grass layer
+                        for (let physicalHeightY = 0; physicalHeightY < SYSTEM_CONSTANTS.TOTAL_WORLD_HEIGHT; physicalHeightY++) {
+                            const storageStringIndexKey = this.generateGlobalKeyCoordinatesHash(globalCoordinateX, physicalHeightY, globalCoordinateZ);
+                            if (physicalHeightY === 0) {
+                                this.allocatedWorldDataBlocksMap[storageStringIndexKey] = 4; 
+                            } else if (physicalHeightY === safeClampedSurfaceHeightY) {
+                                this.allocatedWorldDataBlocksMap[storageStringIndexKey] = (physicalHeightY < 14) ? 8 : 1;
+                            } else if (physicalHeightY < safeClampedSurfaceHeightY && physicalHeightY > safeClampedSurfaceHeightY - 4) {
+                                this.allocatedWorldDataBlocksMap[storageStringIndexKey] = 2; 
+                            } else if (physicalHeightY <= safeClampedSurfaceHeightY - 4) {
+                                const rand = Math.random();
+                                this.allocatedWorldDataBlocksMap[storageStringIndexKey] = (rand < 0.025) ? 13 : ((rand < 0.030) ? 11 : 3);
+                            } else if (physicalHeightY <= 13 && !this.allocatedWorldDataBlocksMap[storageStringIndexKey]) {
+                                this.allocatedWorldDataBlocksMap[storageStringIndexKey] = 9; 
                             }
-                        } else if (y < safeClampedY && y > safeClampedY - 3) {
-                            globalBlockMatrixData[matrixMapKey] = 2; // Core Dirt base
-                        } else if (y <= safeClampedY - 3) {
-                            globalBlockMatrixData[matrixMapKey] = 3; // Bedrock Subsurface Hardstone
-                        } else if (y <= 9 && !globalBlockMatrixData[matrixMapKey]) {
-                            globalBlockMatrixData[matrixMapKey] = 8; // Fluid Water Level
+                        }
+
+                        if (localX === 5 && localZ === 9 && Math.random() > 0.45 && safeClampedSurfaceHeightY > 14) {
+                            if (this.allocatedWorldDataBlocksMap[this.generateGlobalKeyCoordinatesHash(globalCoordinateX, safeClampedSurfaceHeightY, globalCoordinateZ)] === 1) {
+                                this.deployProceduralTreeStructureObject(globalCoordinateX, safeClampedSurfaceHeightY + 1, globalCoordinateZ);
+                            }
                         }
                     }
-
-                    // Procedural Foliage Structure Vector Allocation Passes
-                    if (x % 10 === 3 && z % 10 === 6 && Math.random() > 0.4) {
-                        const rootFloorHeightY = safeClampedY;
-                        if (rootFloorHeightY > 10 && globalBlockMatrixData[`${x},${rootFloorHeightY},${z}`] === 1) {
-                            allocateVoxelTreeStructureNode(x, rootFloorHeightY + 1, z);
+                }
+                this.allocatedWorldDataBlocksMap[trackingKeyFlag] = true;
+            },
+            deployProceduralTreeStructureObject: function(bx, by, bz) {
+                const th = 4 + Math.floor(Math.random() * 2);
+                for (let i = 0; i < th; i++) {
+                    this.allocatedWorldDataBlocksMap[this.generateGlobalKeyCoordinatesHash(bx, by + i, bz)] = 5;
+                }
+                const lh = by + th - 1;
+                for (let ox = -2; ox <= 2; ox++) {
+                    for (let oz = -2; oz <= 2; oz++) {
+                        for (let oy = -1; oy <= 2; oy++) {
+                            const key = this.generateGlobalKeyCoordinatesHash(bx + ox, lh + oy, bz + oz);
+                            if (!this.allocatedWorldDataBlocksMap[key]) {
+                                if (Math.abs(ox) === 2 && Math.abs(oz) === 2 && Math.random() < 0.5) continue;
+                                this.allocatedWorldDataBlocksMap[key] = 6;
+                            }
                         }
                     }
                 }
             }
-            globalBlockMatrixData[chunkAllocationKeyFlag] = true;
-        }
+        };
 
-        function allocateVoxelTreeStructureNode(rx, ry, rz) {
-            const trunkTargetHeight = 4;
-            for (let h = 0; h < trunkTargetHeight; h++) {
-                globalBlockMatrixData[`${rx},${ry + h},${rz}`] = 4;
-            }
-            const canopyTopCenterY = ry + trunkTargetHeight - 1;
-            for (let ox = -2; ox <= 2; ox++) {
-                for (let oz = -2; oz <= 2; oz++) {
-                    for (let oy = -1; oy <= 1; oy++) {
-                        const targetLeafKey = `${rx + ox},${canopyTopCenterY + oy},${rz + oz}`;
-                        if (!globalBlockMatrixData[targetLeafKey]) {
-                            if (Math.abs(ox) === 2 && Math.abs(oz) === 2 && Math.random() < 0.4) continue;
-                            globalBlockMatrixData[targetLeafKey] = 5;
-                        }
-                    }
+        const CompactBufferGeometryCompilerPipeline = {
+            executeSubChunkGeometryMeshCompilation: function(chunkVectorX, chunkVectorY, chunkVectorZ) {
+                const compositionMeshLookupId = `${chunkVectorX},${chunkVectorY},${chunkVectorZ}`;
+                const targetedActiveScene = RuntimeEngineGlobalStateVariables.threeJsSceneInstance;
+
+                if (SegmentedVoxelDatabaseMemoryManager.compiledGraphicChunkModulesMap[compositionMeshLookupId]) {
+                    targetedActiveScene.remove(SegmentedVoxelDatabaseMemoryManager.compiledGraphicChunkModulesMap[compositionMeshLookupId]);
+                    SegmentedVoxelDatabaseMemoryManager.compiledGraphicChunkModulesMap[compositionMeshLookupId].geometry.dispose();
+                    delete SegmentedVoxelDatabaseMemoryManager.compiledGraphicChunkModulesMap[compositionMeshLookupId];
                 }
-            }
-        }
 
-        /**
-         * PERFORMANCE CRITICAL PASS: MEMORY ALLOCATED BUFFER GEOMETRY COMPILER
-         */
-        function compileSingleChunkGeometryBufferMesh(cx, cz) {
-            const dynamicMeshKey = `${cx},${cz}`;
-            
-            if (globalChunkMeshNodeMap[dynamicMeshKey]) {
-                gameScene.remove(globalChunkMeshNodeMap[dynamicMeshKey]);
-                globalChunkMeshNodeMap[dynamicMeshKey].geometry.dispose();
-                delete globalChunkMeshNodeMap[dynamicMeshKey];
-            }
+                SegmentedVoxelDatabaseMemoryManager.allocateProceduralLandscapeMapDatabaseSegment(chunkVectorX, chunkVectorZ);
 
-            executeProceduralDataGenerationPass(cx, cz);
+                const dynamicPositionVerticesVectorBuffer = [];
+                const dynamicColorVerticesVectorBuffer = [];
 
-            const rawPositionBufferArray = [];
-            const rawColorBufferArray = [];
-            
-            const startX = cx * ENGINE_CONFIG.CHUNK_SIZE;
-            const startZ = cz * ENGINE_CONFIG.CHUNK_SIZE;
+                const coordinateCalculatedStartX = chunkVectorX * SYSTEM_CONSTANTS.CHUNK_SIZE_X;
+                const coordinateCalculatedStartY = chunkVectorY * SYSTEM_CONSTANTS.CHUNK_SIZE_Y;
+                const coordinateCalculatedStartZ = chunkVectorZ * SYSTEM_CONSTANTS.CHUNK_SIZE_Z;
 
-            // Direct Face Construction Matrices to guarantee clean, unwarped 1:1 boxes
-            const standardFaceDefinitions = [
-                { dir: [0, 0, 1], verts: [[-0.5,-0.5, 0.5],[ 0.5,-0.5, 0.5],[ 0.5, 0.5, 0.5],[-0.5,-0.5, 0.5],[ 0.5, 0.5, 0.5],[-0.5, 0.5, 0.5]] },
-                { dir: [0, 0,-1], verts: [[ 0.5,-0.5,-0.5],[-0.5,-0.5,-0.5],[-0.5, 0.5,-0.5],[ 0.5,-0.5,-0.5],[-0.5, 0.5,-0.5],[ 0.5, 0.5,-0.5]] },
-                { dir: [0, 1, 0], verts: [[-0.5, 0.5, 0.5],[ 0.5, 0.5, 0.5],[ 0.5, 0.5,-0.5],[-0.5, 0.5, 0.5],[ 0.5, 0.5,-0.5],[-0.5, 0.5,-0.5]] },
-                { dir: [0,-1, 0], verts: [[-0.5,-0.5,-0.5],[ 0.5,-0.5,-0.5],[ 0.5,-0.5, 0.5],[-0.5,-0.5,-0.5],[ 0.5,-0.5, 0.5],[-0.5,-0.5, 0.5]] },
-                { dir: [1, 0, 0], verts: [[ 0.5,-0.5, 0.5],[ 0.5,-0.5,-0.5],[ 0.5, 0.5,-0.5],[ 0.5,-0.5, 0.5],[ 0.5, 0.5,-0.5],[ 0.5, 0.5, 0.5]] },
-                { dir: [-1, 0, 0], verts: [[-0.5,-0.5,-0.5],[-0.5,-0.5, 0.5],[-0.5, 0.5, 0.5],[-0.5,-0.5,-0.5],[-0.5, 0.5, 0.5],[-0.5, 0.5,-0.5]] }
-            ];
+                const modular3DBoxFacesDefinitions = [
+                    { normalDirectionVector: [0, 0, 1], verticesLayoutMatrix: [[-0.5,-0.5, 0.5],[ 0.5,-0.5, 0.5],[ 0.5, 0.5, 0.5],[-0.5,-0.5, 0.5],[ 0.5, 0.5, 0.5],[-0.5, 0.5, 0.5]] },
+                    { normalDirectionVector: [0, 0,-1], verticesLayoutMatrix: [[ 0.5,-0.5,-0.5],[-0.5,-0.5,-0.5],[-0.5, 0.5,-0.5],[ 0.5,-0.5,-0.5],[-0.5, 0.5,-0.5],[ 0.5, 0.5,-0.5]] },
+                    { normalDirectionVector: [0, 1, 0], verticesLayoutMatrix: [[-0.5, 0.5, 0.5],[ 0.5, 0.5, 0.5],[ 0.5, 0.5,-0.5],[-0.5, 0.5, 0.5],[ 0.5, 0.5,-0.5],[-0.5, 0.5,-0.5]] },
+                    { normalDirectionVector: [0,-1, 0], verticesLayoutMatrix: [[-0.5,-0.5,-0.5],[ 0.5,-0.5,-0.5],[ 0.5,-0.5, 0.5],[-0.5,-0.5,-0.5],[ 0.5,-0.5, 0.5],[-0.5,-0.5, 0.5]] },
+                    { normalDirectionVector: [1, 0, 0], verticesLayoutMatrix: [[ 0.5,-0.5, 0.5],[ 0.5,-0.5,-0.5],[ 0.5, 0.5,-0.5],[ 0.5,-0.5, 0.5],[ 0.5, 0.5,-0.5],[ 0.5, 0.5, 0.5]] },
+                    { normalDirectionVector: [-1, 0, 0], verticesLayoutMatrix: [[-0.5,-0.5,-0.5],[-0.5,-0.5, 0.5],[-0.5, 0.5, 0.5],[-0.5,-0.5,-0.5],[-0.5, 0.5, 0.5],[-0.5, 0.5,-0.5]] }
+                ];
 
-            for (let x = startX; x < startX + ENGINE_CONFIG.CHUNK_SIZE; x++) {
-                for (let z = startZ; z < startZ + ENGINE_CONFIG.CHUNK_SIZE; z++) {
-                    for (let y = 0; y < ENGINE_CONFIG.CHUNK_HEIGHT; y++) {
-                        
-                        const currentBlockId = globalBlockMatrixData[`${x},${y},${z}`];
-                        if (!currentBlockId) continue;
+                for (let indexX = 0; indexX < SYSTEM_CONSTANTS.CHUNK_SIZE_X; indexX++) {
+                    for (let indexZ = 0; indexZ < SYSTEM_CONSTANTS.CHUNK_SIZE_Z; indexZ++) {
+                        for (let indexY = 0; indexY < SYSTEM_CONSTANTS.CHUNK_SIZE_Y; indexY++) {
 
-                        const lookupBlockData = BlockSystemRegistry[currentBlockId];
-                        const convertedColorFormat = new THREE.Color(lookupBlockData.color);
+                            const actualAbsolutePositionX = coordinateCalculatedStartX + indexX;
+                            const actualAbsolutePositionY = coordinateCalculatedStartY + indexY;
+                            const actualAbsolutePositionZ = coordinateCalculatedStartZ + indexZ;
 
-                        // High-Speed Loop Face Occlusion Culling Pass
-                        for (let f = 0; f < standardFaceDefinitions.length; f++) {
-                            const currentFace = standardFaceDefinitions[f];
-                            const neighborX = x + currentFace.dir[0];
-                            const neighborY = y + currentFace.dir[1];
-                            const neighborZ = z + currentFace.dir[2];
-                            
-                            const neighborBlockId = globalBlockMatrixData[`${neighborX},${neighborY},${neighborZ}`];
+                            const elementLookupStorageKey = SegmentedVoxelDatabaseMemoryManager.generateGlobalKeyCoordinatesHash(actualAbsolutePositionX, actualAbsolutePositionY, actualAbsolutePositionZ);
+                            const currentRegisteredVoxelId = SegmentedVoxelDatabaseMemoryManager.allocatedWorldDataBlocksMap[elementLookupStorageKey];
 
-                            // Dynamic Optimization Culling Logic Rule
-                            if (activeAggressiveCullingSetting && neighborBlockId) {
-                                if (BlockSystemRegistry[neighborBlockId].solid) {
-                                    continue; // Hide unexposed shared geometry coordinates to prevent hardware frame drops
+                            if (!currentRegisteredVoxelId) continue;
+
+                            const voxelSpecificationMetadata = EngineGlobalVoxelRegistry[currentRegisteredVoxelId];
+                            const baseThreeColorFormat = new THREE.Color(voxelSpecificationMetadata.color);
+
+                            for (let faceIdx = 0; faceIdx < modular3DBoxFacesDefinitions.length; faceIdx++) {
+                                const currentFaceObjectData = modular3DBoxFacesDefinitions[faceIdx];
+                                
+                                const neighborBlockCoordX = actualAbsolutePositionX + currentFaceObjectData.normalDirectionVector[0];
+                                const neighborBlockCoordY = actualAbsolutePositionY + currentFaceObjectData.normalDirectionVector[1];
+                                const neighborBlockCoordZ = actualAbsolutePositionZ + currentFaceObjectData.normalDirectionVector[2];
+
+                                if (neighborBlockCoordY >= 0 && neighborBlockCoordY < SYSTEM_CONSTANTS.TOTAL_WORLD_HEIGHT) {
+                                    const neighborVoxelLookupKey = SegmentedVoxelDatabaseMemoryManager.generateGlobalKeyCoordinatesHash(neighborBlockCoordX, neighborBlockCoordY, neighborBlockCoordZ);
+                                    const neighborRegisteredVoxelId = SegmentedVoxelDatabaseMemoryManager.allocatedWorldDataBlocksMap[neighborVoxelLookupKey];
+
+                                    if (RuntimeEngineGlobalStateVariables.systemConfigAggressiveCullingActive && neighborRegisteredVoxelId) {
+                                        if (EngineGlobalVoxelRegistry[neighborRegisteredVoxelId].isSolid && EngineGlobalVoxelRegistry[neighborRegisteredVoxelId].opacity === 1.0) {
+                                            continue; 
+                                        }
+                                    }
+                                }
+
+                                for (let vertexLayoutIdx = 0; vertexLayoutIdx < currentFaceObjectData.verticesLayoutMatrix.length; vertexLayoutIdx++) {
+                                    const currentVertexVectorArray = currentFaceObjectData.verticesLayoutMatrix[vertexLayoutIdx];
+                                    
+                                    dynamicPositionVerticesVectorBuffer.push(
+                                        currentVertexVectorArray[0] + actualAbsolutePositionX,
+                                        currentVertexVectorArray[1] + actualAbsolutePositionY,
+                                        currentVertexVectorArray[2] + actualAbsolutePositionZ
+                                    );
+
+                                    let softShadingFactor = 1.0;
+                                    if (currentFaceObjectData.normalDirectionVector[1] === -1) softShadingFactor = 0.65; 
+                                    if (Math.abs(currentFaceObjectData.normalDirectionVector[0]) === 1) softShadingFactor = 0.82;
+                                    if (Math.abs(currentFaceObjectData.normalDirectionVector[2]) === 1) softShadingFactor = 0.90;
+
+                                    dynamicColorVerticesVectorBuffer.push(
+                                        baseThreeColorFormat.r * softShadingFactor,
+                                        baseThreeColorFormat.g * softShadingFactor,
+                                        baseThreeColorFormat.b * softShadingFactor
+                                    );
                                 }
                             }
+                        }
+                    }
+                }
 
-                            // Inject calculated safe vertex transformations into active drawing arrays
-                            for (let v = 0; v < currentFace.verts.length; v++) {
-                                const coordinateVector = currentFace.verts[v];
-                                rawPositionBufferArray.push(coordinateVector[0] + x, coordinateVector[1] + y, coordinateVector[2] + z);
-                                rawColorBufferArray.push(convertedColorFormat.r, convertedColorFormat.g, convertedColorFormat.b);
+                if (dynamicPositionVerticesVectorBuffer.length === 0) return;
+
+                const processedHardwareBufferGeometry = new THREE.BufferGeometry();
+                processedHardwareBufferGeometry.setAttribute('position', new THREE.Float32BufferAttribute(dynamicPositionVerticesVectorBuffer, 3));
+                processedHardwareBufferGeometry.setAttribute('color', new THREE.Float32BufferAttribute(dynamicColorVerticesVectorBuffer, 3));
+                processedHardwareBufferGeometry.computeVertexNormals();
+
+                const targetMeshMaterialNode = new THREE.MeshLambertMaterial({
+                    vertexColors: true,
+                    transparent: true,
+                    opacity: 1.0
+                });
+
+                const completeSynthesizedChunkMeshNode = new THREE.Mesh(processedHardwareBufferGeometry, targetMeshMaterialNode);
+                targetedActiveScene.add(completeSynthesizedChunkMeshNode);
+                SegmentedVoxelDatabaseMemoryManager.compiledGraphicChunkModulesMap[compositionMeshLookupId] = completeSynthesizedChunkMeshNode;
+            }
+        };
+
+        const LiveBufferMatrixStreamingVisibilityManager = {
+            synchronizeActiveSectorsStreamingPipeline: function() {
+                const actorCurrentPositionCoordinates = RuntimeEngineGlobalStateVariables.pointerLockControlsInstance.getObject().position;
+                const activeSceneRef = RuntimeEngineGlobalStateVariables.threeJsSceneInstance;
+                const trackingCameraInstance = RuntimeEngineGlobalStateVariables.threeJsMainCameraInstance;
+
+                const centerActorChunkX = Math.floor(actorCurrentPositionCoordinates.x / SYSTEM_CONSTANTS.CHUNK_SIZE_X);
+                const centerActorChunkZ = Math.floor(actorCurrentPositionCoordinates.z / SYSTEM_CONSTANTS.CHUNK_SIZE_Z);
+
+                const currentIdentifiedActiveChunksSetKeys = new Set();
+                let runningCalculatedDrawCallCounter = 0;
+                let activeCulledCounter = 0;
+
+                const analyticalFrustumMatrix = new THREE.Frustum();
+                const compositeProjectionMatrix = new THREE.Matrix4().multiplyMatrices(trackingCameraInstance.projectionMatrix, trackingCameraInstance.matrixWorldInverse);
+                analyticalFrustumMatrix.setFromProjectionMatrix(compositeProjectionMatrix);
+
+                const currentConfigRadius = RuntimeEngineGlobalStateVariables.systemConfigRadiusRenderDistance;
+
+                for (let offsetX = -currentConfigRadius; offsetX <= currentConfigRadius; offsetX++) {
+                    for (let offsetZ = -currentConfigRadius; offsetZ <= currentConfigRadius; offsetZ++) {
+                        for (let offsetY = 0; offsetY < SYSTEM_CONSTANTS.WORLD_MAX_CHUNKS_Y; offsetY++) {
+                            
+                            const computedTargetChunkX = centerActorChunkX + offsetX;
+                            const computedTargetChunkY = offsetY;
+                            const computedTargetChunkZ = centerActorChunkZ + offsetZ;
+
+                            const dynamicCompositeStringKey = `${computedTargetChunkX},${computedTargetChunkY},${computedTargetChunkZ}`;
+                            currentIdentifiedActiveChunksSetKeys.add(dynamicCompositeStringKey);
+
+                            const sectorBoundingBoxMinX = computedTargetChunkX * SYSTEM_CONSTANTS.CHUNK_SIZE_X;
+                            const sectorBoundingBoxMinY = computedTargetChunkY * SYSTEM_CONSTANTS.CHUNK_SIZE_Y;
+                            const sectorBoundingBoxMinZ = computedTargetChunkZ * SYSTEM_CONSTANTS.CHUNK_SIZE_Z;
+                            
+                            const analyticalChunkBoundingBox = new THREE.Box3(
+                                new THREE.Vector3(sectorBoundingBoxMinX, sectorBoundingBoxMinY, sectorBoundingBoxMinZ),
+                                new THREE.Vector3(sectorBoundingBoxMinX + SYSTEM_CONSTANTS.CHUNK_SIZE_X, sectorBoundingBoxMinY + SYSTEM_CONSTANTS.CHUNK_SIZE_Y, sectorBoundingBoxMinZ + SYSTEM_CONSTANTS.CHUNK_SIZE_Z)
+                            );
+
+                            if (!analyticalFrustumMatrix.intersectsBox(analyticalChunkBoundingBox)) {
+                                if (SegmentedVoxelDatabaseMemoryManager.compiledGraphicChunkModulesMap[dynamicCompositeStringKey]) {
+                                    SegmentedVoxelDatabaseMemoryManager.compiledGraphicChunkModulesMap[dynamicCompositeStringKey].visible = false;
+                                }
+                                activeCulledCounter++;
+                                continue; 
+                            }
+
+                            if (!SegmentedVoxelDatabaseMemoryManager.compiledGraphicChunkModulesMap[dynamicCompositeStringKey]) {
+                                CompactBufferGeometryCompilerPipeline.executeSubChunkGeometryMeshCompilation(computedTargetChunkX, computedTargetChunkY, computedTargetChunkZ);
+                            } else {
+                                SegmentedVoxelDatabaseMemoryManager.compiledGraphicChunkModulesMap[dynamicCompositeStringKey].visible = true;
+                                runningCalculatedDrawCallCounter += (SegmentedVoxelDatabaseMemoryManager.compiledGraphicChunkModulesMap[dynamicCompositeStringKey].geometry.attributes.position.count / 36);
                             }
                         }
                     }
                 }
-            }
 
-            if (rawPositionBufferArray.length === 0) return;
-
-            const compositeGeometryNode = new THREE.BufferGeometry();
-            compositeGeometryNode.setAttribute('position', new THREE.Float32BufferAttribute(rawPositionBufferArray, 3));
-            compositeGeometryNode.setAttribute('color', new THREE.Float32BufferAttribute(rawColorBufferArray, 3));
-            compositeGeometryNode.computeVertexNormals();
-
-            const combinedMaterialNode = new THREE.MeshLambertMaterial({ vertexColors: true });
-            const completeChunkMesh = new THREE.Mesh(compositeGeometryNode, combinedMaterialNode);
-            
-            gameScene.add(completeChunkMesh);
-            globalChunkMeshNodeMap[dynamicMeshKey] = completeChunkMesh;
-        }
-
-        function synchronizeActiveChunkMapStreaming() {
-            const currentActorCoordinates = navigationControls.getObject().position;
-            const currentComputedChunkX = Math.floor(currentActorCoordinates.x / ENGINE_CONFIG.CHUNK_SIZE);
-            const currentComputedChunkZ = Math.floor(currentActorCoordinates.z / ENGINE_CONFIG.CHUNK_SIZE);
-
-            const activeVisibleChunksTrackingSet = new Set();
-
-            for (let ox = -activeRenderDistanceSetting; ox <= activeRenderDistanceSetting; ox++) {
-                for (let oz = -activeRenderDistanceSetting; oz <= activeRenderDistanceSetting; oz++) {
-                    const targetChunkCoordX = currentComputedChunkX + ox;
-                    const targetChunkCoordZ = currentComputedChunkZ + oz;
-                    const compositeStringKey = `${targetChunkCoordX},${targetChunkCoordZ}`;
-
-                    activeVisibleChunksTrackingSet.add(compositeStringKey);
-
-                    if (!globalChunkMeshNodeMap[compositeStringKey]) {
-                        compileSingleChunkGeometryBufferMesh(targetChunkCoordX, targetChunkCoordZ);
-                    }
-                }
-            }
-
-            // Cleanup routine loop: Unload trailing map sectors out of render range to free up memory
-            Object.keys(globalChunkMeshNodeMap).forEach(activeKey => {
-                if (!activeVisibleChunksTrackingSet.has(activeKey)) {
-                    gameScene.remove(globalChunkMeshNodeMap[activeKey]);
-                    globalChunkMeshNodeMap[activeKey].geometry.dispose();
-                    delete globalChunkMeshNodeMap[activeKey];
-                }
-            });
-
-            document.getElementById('stat-chunk-id').innerText = `Chunk Vector: [${currentComputedChunkX}, ${currentComputedChunkZ}]`;
-            document.getElementById('stat-cached-blocks').innerText = `Allocated Cells: ${Object.keys(globalBlockMatrixData).length}`;
-        }
-
-        function executeVoxelMatrixCellUpdate(worldPositionX, worldPositionY, worldPositionZ, targetVoxelBlockId) {
-            const trackingMatrixKey = `${worldPositionX},${worldPositionY},${worldPositionZ}`;
-            
-            if (targetVoxelBlockId === 0) {
-                delete globalBlockMatrixData[trackingMatrixKey];
-            } else {
-                globalBlockMatrixData[trackingMatrixKey] = targetVoxelBlockId;
-            }
-
-            const associatedChunkCoordX = Math.floor(worldPositionX / ENGINE_CONFIG.CHUNK_SIZE);
-            const associatedChunkCoordZ = Math.floor(worldPositionZ / ENGINE_CONFIG.CHUNK_SIZE);
-
-            compileSingleChunkGeometryBufferMesh(associatedChunkCoordX, associatedChunkCoordZ);
-
-            // Recompile chunk boundary seams if mutations happen along block edge frames
-            if (worldPositionX % ENGINE_CONFIG.CHUNK_SIZE === 0) compileSingleChunkGeometryBufferMesh(associatedChunkCoordX - 1, associatedChunkCoordZ);
-            if (worldPositionX % ENGINE_CONFIG.CHUNK_SIZE === ENGINE_CONFIG.CHUNK_SIZE - 1) compileSingleChunkGeometryBufferMesh(associatedChunkCoordX + 1, associatedChunkCoordZ);
-            if (worldPositionZ % ENGINE_CONFIG.CHUNK_SIZE === 0) compileSingleChunkGeometryBufferMesh(associatedChunkCoordX, associatedChunkCoordZ - 1);
-            if (worldPositionZ % ENGINE_CONFIG.CHUNK_SIZE === ENGINE_CONFIG.CHUNK_SIZE - 1) compileSingleChunkGeometryBufferMesh(associatedChunkCoordX, associatedChunkCoordZ + 1);
-        }
-
-        /**
-         * DYNAMIC INTERACTION CONTROLLER MODULE: EXACT BLOCK SELECTION RAYCASTER
-         */
-        function fireVoxelTargetedRaycastSequence(isDestructiveAction) {
-            if (!navigationControls.isLocked || isCreativeHubPanelOpen || isSettingsPanelOpen) return;
-
-            const systemRaycasterNode = new THREE.Raycaster();
-            systemRaycasterNode.setFromCamera(new THREE.Vector2(0, 0), mainCamera);
-
-            let calculatedClosestInterceptTarget = null;
-            let interactiveReachThreshold = ENGINE_CONFIG.REACH_DISTANCE;
-
-            // Direct mathematical box intersection loop over close proximity blocks
-            Object.keys(globalBlockMatrixData).forEach(cellKey => {
-                if (cellKey.includes("_populated")) return;
-                const splitCoordinates = cellKey.split(',').map(Number);
-                const blockVectorPosition = new THREE.Vector3(splitCoordinates[0], splitCoordinates[1], splitCoordinates[2]);
-                const actualCalculatedDistance = mainCamera.position.distanceTo(blockVectorPosition);
-
-                if (actualCalculatedDistance < interactiveReachThreshold) {
-                    const structuralBoundingBoxCheck = systemRaycasterNode.intersectBox(new THREE.Box3(
-                        new THREE.Vector3(splitCoordinates[0] - 0.5, splitCoordinates[1] - 0.5, splitCoordinates[2] - 0.5),
-                        new THREE.Vector3(splitCoordinates[0] + 0.5, splitCoordinates[1] + 0.5, splitCoordinates[2] + 0.5)
-                    ), new THREE.Vector3());
-
-                    if (structuralBoundingBoxCheck) {
-                        interactiveReachThreshold = actualCalculatedDistance;
-                        calculatedClosestInterceptTarget = { coords: splitCoordinates, point: structuralBoundingBoxCheck };
-                    }
-                }
-            });
-
-            if (calculatedClosestInterceptTarget) {
-                const targetCoordinateX = calculatedClosestInterceptTarget.coords[0];
-                const targetCoordinateY = calculatedClosestInterceptTarget.coords[1];
-                const targetCoordinateZ = calculatedClosestInterceptTarget.coords[2];
-
-                if (isDestructiveAction) {
-                    executeVoxelMatrixCellUpdate(targetCoordinateX, targetCoordinateY, targetCoordinateZ, 0);
-                } else {
-                    // Compute exact target placement vector normal offsets based on camera viewing angles
-                    const cameraReferencePosition = mainCamera.position;
-                    let targetNormalOffsetX = 0, targetNormalOffsetY = 0, targetNormalOffsetZ = 0;
-                    
-                    const deltaX = cameraReferencePosition.x - targetCoordinateX;
-                    const deltaY = cameraReferencePosition.y - targetCoordinateY;
-                    const deltaZ = cameraReferencePosition.z - targetCoordinateZ;
-
-                    if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > Math.abs(deltaZ)) {
-                        targetNormalOffsetX = deltaX > 0 ? 1 : -1;
-                    } else if (Math.abs(deltaY) > Math.abs(deltaX) && Math.abs(deltaY) > Math.abs(deltaZ)) {
-                        targetNormalOffsetY = deltaY > 0 ? 1 : -1;
-                    } else {
-                        targetNormalOffsetZ = deltaZ > 0 ? 1 : -1;
-                    }
-
-                    const placementTargetX = targetCoordinateX + targetNormalOffsetX;
-                    const placementTargetY = targetCoordinateY + targetNormalOffsetY;
-                    const placementTargetZ = targetCoordinateZ + targetNormalOffsetZ;
-
-                    // Actor body boundary crash protection check
-                    const currentActorPos = navigationControls.getObject().position;
-                    if (Math.abs(placementTargetX - Math.round(currentActorPos.x)) < 1 && 
-                        Math.abs(placementTargetZ - Math.round(currentActorPos.z)) < 1 && 
-                        (placementTargetY === Math.floor(currentActorPos.y) || placementTargetY === Math.floor(currentActorPos.y - ENGINE_CONFIG.PLAYER_HEIGHT))) {
-                        return; // Target overlaps with player body bounding boxes; cancel placement pass
-                    }
-
-                    const activeSelectionBlockId = runtimeHotbarArray[currentHotbarSelectedIdx];
-                    executeVoxelMatrixCellUpdate(placementTargetX, placementTargetY, placementTargetZ, activeSelectionBlockId);
-                }
-            }
-        }
-
-        /**
-         * PHYSICS CONSTRAINT BOUNDARY CHECK ENGINE
-         */
-        function checkSpatialCollisionState(predictedPositionVector) {
-            const boundsMinX = Math.floor(predictedPositionVector.x - ENGINE_CONFIG.PLAYER_RADIUS);
-            const boundsMaxX = Math.floor(predictedPositionVector.x + ENGINE_CONFIG.PLAYER_RADIUS);
-            const boundsMinZ = Math.floor(predictedPositionVector.z - ENGINE_CONFIG.PLAYER_RADIUS);
-            const boundsMaxZ = Math.floor(predictedPositionVector.z + ENGINE_CONFIG.PLAYER_RADIUS);
-            
-            const boundsMinY = Math.floor(predictedPositionVector.y - ENGINE_CONFIG.PLAYER_HEIGHT);
-            const boundsMaxY = Math.floor(predictedPositionVector.y);
-
-            for (let x = boundsMinX; x <= boundsMaxX; x++) {
-                for (let y = boundsMinY; y <= boundsMaxY; y++) {
-                    for (let z = boundsMinZ; z <= boundsMaxZ; z++) {
-                        const targetBlockId = globalBlockMatrixData[`${x},${y},${z}`];
-                        if (targetBlockId && BlockSystemRegistry[targetBlockId].solid) {
-                            return true; // Dense overlapping verified
+                // HARD PURGE DESTRUCTOR ROUTINE (Deletes out-of-bounds chunks completely from GPU VRAM)
+                Object.keys(SegmentedVoxelDatabaseMemoryManager.compiledGraphicChunkModulesMap).forEach(activeKeyString => {
+                    if (!currentIdentifiedActiveChunksSetKeys.has(activeKeyString)) {
+                        const targetMeshInstance = SegmentedVoxelDatabaseMemoryManager.compiledGraphicChunkModulesMap[activeKeyString];
+                        if (targetMeshInstance) {
+                            activeSceneRef.remove(targetMeshInstance);
+                            if (targetMeshInstance.geometry) targetMeshInstance.geometry.dispose();
+                            if (targetMeshInstance.material) {
+                                if (Array.isArray(targetMeshInstance.material)) {
+                                    targetMeshInstance.material.forEach(m => m.dispose());
+                                } else {
+                                    targetMeshInstance.material.dispose();
+                                }
+                            }
                         }
+                        delete SegmentedVoxelDatabaseMemoryManager.compiledGraphicChunkModulesMap[activeKeyString];
                     }
-                }
-            }
-            return false;
-        }
-
-        /**
-         * CONTROL INPUT KEYBOARD AND USER INTERFACE OVERLAY EVENT HANDLING INTERFACES
-         */
-        function registerSystemInputBindings() {
-            document.addEventListener('keydown', (e) => {
-                if (e.code === 'KeyE') {
-                    toggleCreativeInventoryPanelOverlay();
-                    e.preventDefault();
-                    return;
-                }
-                if (e.code === 'KeyO') {
-                    toggleSystemSettingsPanelOverlay();
-                    e.preventDefault();
-                    return;
-                }
-
-                if (isCreativeHubPanelOpen || isSettingsPanelOpen) return;
-
-                switch (e.code) {
-                    case 'KeyW': inputStateForward = true; break;
-                    case 'KeyS': inputStateBackward = true; break;
-                    case 'KeyA': inputStateLeft = true; break;  // Fixed map left movement mapping
-                    case 'KeyD': inputStateRight = true; break; // Fixed map right movement mapping
-                    case 'Space': 
-                        if (actorStateIsOnGround) {
-                            actorMovementVelocity.y = ENGINE_CONFIG.JUMP_IMPULSE;
-                            actorStateIsOnGround = false;
-                        }
-                        break;
-                    case 'Digit1': currentHotbarSelectedIdx = 0; renderEngineHotbarUI(); break;
-                    case 'Digit2': currentHotbarSelectedIdx = 1; renderEngineHotbarUI(); break;
-                    case 'Digit3': currentHotbarSelectedIdx = 2; renderEngineHotbarUI(); break;
-                    case 'Digit4': currentHotbarSelectedIdx = 3; renderEngineHotbarUI(); break;
-                    case 'Digit5': currentHotbarSelectedIdx = 4; renderEngineHotbarUI(); break;
-                }
-            });
-
-            document.addEventListener('keyup', (e) => {
-                switch (e.code) {
-                    case 'KeyW': inputStateForward = false; break;
-                    case 'KeyS': inputStateBackward = false; break;
-                    case 'KeyA': inputStateLeft = false; break;  // Fixed map left release mapping
-                    case 'KeyD': inputStateRight = false; break; // Fixed map right release mapping
-                }
-            });
-
-            document.addEventListener('mousedown', (e) => {
-                if (isCreativeHubPanelOpen || isSettingsPanelOpen || !navigationControls.isLocked) return;
-                if (e.button === 0) fireVoxelTargetedRaycastSequence(true);  // Destruct block target index
-                if (e.button === 2) fireVoxelTargetedRaycastSequence(false); // Build block target index
-            });
-            
-            document.addEventListener('contextmenu', event => event.preventDefault());
-        }
-
-        function registerSystemUIEvents() {
-            // Close Action Trigger Buttons bindings setup
-            document.getElementById('btn-close-hub').onclick = toggleCreativeInventoryPanelOverlay;
-            document.getElementById('btn-close-settings').onclick = toggleSystemSettingsPanelOverlay;
-
-            // Select configuration mutations changes event bindings registers
-            document.getElementById('setting-render-distance').onchange = function(e) {
-                activeRenderDistanceSetting = parseInt(e.target.value);
-                synchronizeActiveChunkMapStreaming();
-            };
-
-            document.getElementById('setting-culling-mode').onchange = function(e) {
-                activeAggressiveCullingSetting = (e.target.value === 'aggressive');
-                // Force a rebuild across all active chunk mesh segments to instantly update optimizations
-                Object.keys(globalChunkMeshNodeMap).forEach(key => {
-                    const parts = key.split(',').map(Number);
-                    compileSingleChunkGeometryBufferMesh(parts[0], parts[1]);
                 });
-                document.getElementById('stat-mode').innerText = activeAggressiveCullingSetting ? "Render Mode: Aggressive Occlusion" : "Render Mode: Standard Buffer";
-            };
 
-            document.getElementById('setting-res-scale').onchange = function(e) {
-                const scaleValue = parseFloat(e.target.value);
-                webglRenderer.setPixelRatio(scaleValue);
-                executeViewportResizeHandler();
-            };
-        }
+                RuntimeEngineGlobalStateVariables.cachedTotalRenderedVoxelsCount = Math.floor(runningCalculatedDrawCallCounter);
+                RuntimeEngineGlobalStateVariables.cachedCulledModulesCount = activeCulledCounter;
 
-        function renderEngineHotbarUI() {
-            const hotbarDOMContainer = document.getElementById('hotbar-wrapper');
-            hotbarDOMContainer.innerHTML = '';
+                document.getElementById('val-chunk-id').innerText = `[${centerActorChunkX}, ${Math.floor(actorCurrentPositionCoordinates.y / 16)}, ${centerActorChunkZ}]`;
+                document.getElementById('val-draw-count').innerText = `${RuntimeEngineGlobalStateVariables.cachedTotalRenderedVoxelsCount} items`;
+                document.getElementById('val-culled-chunks').innerText = `${RuntimeEngineGlobalStateVariables.cachedCulledModulesCount} layers culled`;
+                document.getElementById('val-hash-load').innerText = `${Object.keys(SegmentedVoxelDatabaseMemoryManager.allocatedWorldDataBlocksMap).length} indices`;
+            },
 
-            runtimeHotbarArray.forEach((blockId, index) => {
-                const slotNodeElement = document.createElement('div');
-                slotNodeElement.className = `hotbar-slot-node ${index === currentHotbarSelectedIdx ? 'active-slot' : ''}`;
-                
-                const previewElementNode = document.createElement('div');
-                previewElementNode.className = 'node-preview';
-                previewElementNode.style.backgroundColor = '#' + BlockSystemRegistry[blockId].color.toString(16);
-
-                const slotIndexLabelNode = document.createElement('div');
-                slotIndexLabelNode.className = 'node-index';
-                slotIndexLabelNode.innerText = index + 1;
-
-                slotNodeElement.appendChild(slotIndexLabelNode);
-                slotNodeElement.appendChild(previewElementNode);
-                hotbarDOMContainer.appendChild(slotNodeElement);
-            });
-        }
-
-        function buildCreativeInventoryCatalogDOMGrid() {
-            const gridDOMWrapper = document.getElementById('catalog-dom-grid');
-            gridDOMWrapper.innerHTML = '';
-
-            Object.keys(BlockSystemRegistry).forEach(registryStringId => {
-                const targetKeyId = Number(registryStringId);
-                const metadataRecord = BlockSystemRegistry[targetKeyId];
-
-                const cardElementNode = document.createElement('div');
-                cardElementNode.className = 'catalog-item-card';
-
-                const colorBoxPreviewNode = document.createElement('div');
-                colorBoxPreviewNode.className = 'node-preview';
-                colorBoxPreviewNode.style.backgroundColor = '#' + metadataRecord.color.toString(16);
-
-                const labelTitleNode = document.createElement('div');
-                labelTitleNode.className = 'card-label';
-                labelTitleNode.innerText = metadataRecord.name;
-
-                cardElementNode.appendChild(colorBoxPreviewNode);
-                cardElementNode.appendChild(labelTitleNode);
-
-                cardElementNode.onclick = () => {
-                    runtimeHotbarArray[currentHotbarSelectedIdx] = targetKeyId;
-                    renderEngineHotbarUI();
-                    toggleCreativeInventoryPanelOverlay();
-                };
-
-                gridDOMWrapper.appendChild(cardElementNode);
-            });
-        }
-
-        function toggleCreativeInventoryPanelOverlay() {
-            if (isSettingsPanelOpen) return;
-            isCreativeHubPanelOpen = !isCreativeHubPanelOpen;
-            const targetOverlayDOM = document.getElementById('creative-hub-overlay');
-            
-            if (isCreativeHubPanelOpen) {
-                buildCreativeInventoryCatalogDOMGrid();
-                targetOverlayDOM.style.display = 'flex';
-                navigationControls.unlock();
-                inputStateForward = inputStateBackward = inputStateLeft = inputStateRight = false;
-            } else {
-                targetOverlayDOM.style.display = 'none';
-                navigationControls.lock();
-            }
-        }
-
-        function toggleSystemSettingsPanelOverlay() {
-            if (isCreativeHubPanelOpen) return;
-            isSettingsPanelOpen = !isSettingsPanelOpen;
-            const targetSettingsDOM = document.getElementById('settings-menu-overlay');
-            
-            if (isSettingsPanelOpen) {
-                targetSettingsDOM.style.display = 'flex';
-                navigationControls.unlock();
-                inputStateForward = inputStateBackward = inputStateLeft = inputStateRight = false;
-            } else {
-                targetSettingsDOM.style.display = 'none';
-                navigationControls.lock();
-            }
-        }
-
-        function executeViewportResizeHandler() {
-            mainCamera.aspect = window.innerWidth / window.innerHeight;
-            mainCamera.updateProjectionMatrix();
-            webglRenderer.setSize(window.innerWidth, window.innerHeight);
-        }
-
-        /**
-         * CORE PERFORMANCE GRAPHICS RENDERING RUNTIME MAIN LOOP TICK ROUTINE
-         */
-        function executeMainEngineRenderLoopTick() {
-            requestAnimationFrame(executeMainEngineRenderLoopTick);
-
-            const executionDeltaTime = Math.min(systemClock.getDelta(), 0.08);
-
-            // Compute diagnostic rolling Framerate monitoring updates parameters metrics frames
-            systemFramesCounter++;
-            const currentMetricTimestamp = performance.now();
-            if (currentMetricTimestamp >= systemLastFpsTimestamp + 1000) {
-                document.getElementById('stat-fps').innerText = `FPS: ${systemFramesCounter}`;
-                systemFramesCounter = 0;
-                systemLastFpsTimestamp = currentMetricTimestamp;
-            }
-
-            if (navigationControls.isLocked && !isCreativeHubPanelOpen && !isSettingsPanelOpen) {
-                // Apply constant downward gravity translation vectors checks
-                actorMovementVelocity.y -= ENGINE_CONFIG.GRAVITY * executionDeltaTime;
-                if (actorMovementVelocity.y < -ENGINE_CONFIG.MAX_FALL_SPEED) actorMovementVelocity.y = -ENGINE_CONFIG.MAX_FALL_SPEED;
-
-                // Process input flags conversion state transforms matrices vectors
-                const translationMovementZ = Number(inputStateForward) - Number(inputStateBackward);
-                const translationMovementX = Number(inputStateRight) - Number(inputStateLeft);
-
-                const currentCamDirectionLookVector = new THREE.Vector3();
-                mainCamera.getWorldDirection(currentCamDirectionLookVector);
-                currentCamDirectionLookVector.y = 0;
-                currentCamDirectionLookVector.normalize();
-
-                const horizontalRightAxisVector = new THREE.Vector3();
-                horizontalRightAxisVector.crossVectors(currentCamDirectionLookVector, mainCamera.up).normalize();
-
-                const runtimeTranslationStepVector = new THREE.Vector3();
-                runtimeTranslationStepVector.addScaledVector(currentCamDirectionLookVector, translationMovementZ);
-                runtimeTranslationStepVector.addScaledVector(horizontalRightAxisVector, translationMovementX);
-                runtimeTranslationStepVector.normalize().multiplyScalar(ENGINE_CONFIG.WALK_VELOCITY * executionDeltaTime);
-
-                const actorTransformTargetObject = navigationControls.getObject();
-
-                // Axis Separated Translation Verification Engine Loops Pass
-                // 1. Resolve X coordinate stepping transforms constraints
-                actorTransformTargetObject.position.x += runtimeTranslationStepVector.x;
-                if (checkSpatialCollisionState(actorTransformTargetObject.position)) {
-                    actorTransformTargetObject.position.x -= runtimeTranslationStepVector.x;
+            executeDynamicCellMutationBroadcast: function(absoluteGridCoordX, absoluteGridCoordY, absoluteGridCoordZ, targetMutationVoxelId) {
+                const targetedStorageKey = SegmentedVoxelDatabaseMemoryManager.generateGlobalKeyCoordinatesHash(absoluteGridCoordX, absoluteGridCoordY, absoluteGridCoordZ);
+                if (targetMutationVoxelId === 0) {
+                    delete SegmentedVoxelDatabaseMemoryManager.allocatedWorldDataBlocksMap[targetedStorageKey];
+                } else {
+                    SegmentedVoxelDatabaseMemoryManager.allocatedWorldDataBlocksMap[targetedStorageKey] = targetMutationVoxelId;
                 }
 
-                // 2. Resolve Z coordinate stepping transforms constraints
-                actorTransformTargetObject.position.z += runtimeTranslationStepVector.z;
-                if (checkSpatialCollisionState(actorTransformTargetObject.position)) {
-                    actorTransformTargetObject.position.z -= runtimeTranslationStepVector.z;
-                }
+                const nativeChunkModuleX = Math.floor(absoluteGridCoordX / SYSTEM_CONSTANTS.CHUNK_SIZE_X);
+                const nativeChunkModuleY = Math.floor(absoluteGridCoordY / SYSTEM_CONSTANTS.CHUNK_SIZE_Y);
+                const nativeChunkModuleZ = Math.floor(absoluteGridCoordZ / SYSTEM_CONSTANTS.CHUNK_SIZE_Z);
 
-                // 3. Resolve Vertical Gravity stepping acceleration constraints
-                actorTransformTargetObject.position.y += actorMovementVelocity.y * executionDeltaTime;
-                if (checkSpatialCollisionState(actorTransformTargetObject.position)) {
-                    if (actorMovementVelocity.y < 0) {
-                        actorStateIsOnGround = true; // Actor has safe contact surface under feet boundary flag reset
+                CompactBufferGeometryCompilerPipeline.executeSubChunkGeometryMeshCompilation(nativeChunkModuleX, nativeChunkModuleY, nativeChunkModuleZ);
+
+                if (absoluteGridCoordX % SYSTEM_CONSTANTS.CHUNK_SIZE_X === 0) CompactBufferGeometryCompilerPipeline.executeSubChunkGeometryMeshCompilation(nativeChunkModuleX - 1, nativeChunkModuleY, nativeChunkModuleZ);
+                if (absoluteGridCoordX % SYSTEM_CONSTANTS.CHUNK_SIZE_X === SYSTEM_CONSTANTS.CHUNK_SIZE_X - 1) CompactBufferGeometryCompilerPipeline.executeSubChunkGeometryMeshCompilation(nativeChunkModuleX + 1, nativeChunkModuleY, nativeChunkModuleZ);
+                if (absoluteGridCoordY % SYSTEM_CONSTANTS.CHUNK_SIZE_Y === 0 && nativeChunkModuleY > 0) CompactBufferGeometryCompilerPipeline.executeSubChunkGeometryMeshCompilation(nativeChunkModuleX, nativeChunkModuleY - 1, nativeChunkModuleZ);
+                if (absoluteGridCoordY % SYSTEM_CONSTANTS.CHUNK_SIZE_Y === SYSTEM_CONSTANTS.CHUNK_SIZE_Y - 1 && nativeChunkModuleY < SYSTEM_CONSTANTS.WORLD_MAX_CHUNKS_Y - 1) CompactBufferGeometryCompilerPipeline.executeSubChunkGeometryMeshCompilation(nativeChunkModuleX, nativeChunkModuleY + 1, nativeChunkModuleZ);
+                if (absoluteGridCoordZ % SYSTEM_CONSTANTS.CHUNK_SIZE_Z === 0) CompactBufferGeometryCompilerPipeline.executeSubChunkGeometryMeshCompilation(nativeChunkModuleX, nativeChunkModuleY, nativeChunkModuleZ - 1);
+                if (absoluteGridCoordZ % SYSTEM_CONSTANTS.CHUNK_SIZE_Z === SYSTEM_CONSTANTS.CHUNK_SIZE_Z - 1) CompactBufferGeometryCompilerPipeline.executeSubChunkGeometryMeshCompilation(nativeChunkModuleX, nativeChunkModuleY, nativeChunkModuleZ + 1);
+            }
+        };
+
+        const AccurateCoordinateRaycasterEngine = {
+            fireTargetedActionRaycastPipeline: function(flagIsMiningActionExecution) {
+                if (!RuntimeEngineGlobalStateVariables.pointerLockControlsInstance.isLocked || RuntimeEngineGlobalStateVariables.isCreativeCatalogPanelActive || RuntimeEngineGlobalStateVariables.isSettingsControlPanelActive) return;
+
+                const trackingRaycasterInstance = new THREE.Raycaster();
+                trackingRaycasterInstance.setFromCamera(new THREE.Vector2(0, 0), RuntimeEngineGlobalStateVariables.threeJsMainCameraInstance);
+
+                let closestIdentifiedHitRecord = null;
+                let mathematicalShortestReachDistance = SYSTEM_CONSTANTS.MAX_RAYCAST_REACH_LIMIT;
+
+                Object.keys(SegmentedVoxelDatabaseMemoryManager.allocatedWorldDataBlocksMap).forEach(lookupMatrixKey => {
+                    if (lookupMatrixKey.includes("_allocated")) return;
+                    
+                    const extractedNumericCoordinates = lookupMatrixKey.split(',').map(Number);
+                    const coreBlockCenterVector = new THREE.Vector3(extractedNumericCoordinates[0], extractedNumericCoordinates[1], extractedNumericCoordinates[2]);
+                    const liveCalculatedDistance = RuntimeEngineGlobalStateVariables.threeJsMainCameraInstance.position.distanceTo(coreBlockCenterVector);
+
+                    if (liveCalculatedDistance < mathematicalShortestReachDistance) {
+                        const individualVoxelBoundingBoxCheck = trackingRaycasterInstance.intersectBox(new THREE.Box3(
+                            new THREE.Vector3(extractedNumericCoordinates[0] - 0.5, extractedNumericCoordinates[1] - 0.5, extractedNumericCoordinates[2] - 0.5),
+                            new THREE.Vector3(extractedNumericCoordinates[0] + 0.5, extractedNumericCoordinates[1] + 0.5, extractedNumericCoordinates[2] + 0.5)
+                        ), new THREE.Vector3());
+
+                        if (individualVoxelBoundingBoxCheck) {
+                            mathematicalShortestReachDistance = liveCalculatedDistance;
+                            closestIdentifiedHitRecord = { numericCoords: extractedNumericCoordinates, absoluteHitPoint: individualVoxelBoundingBoxCheck };
+                        }
                     }
-                    actorTransformTargetObject.position.y -= actorMovementVelocity.y * executionDeltaTime;
-                    actorMovementVelocity.y = 0;
+                });
+
+                if (closestIdentifiedHitRecord) {
+                    const intersectedGridX = closestIdentifiedHitRecord.numericCoords[0];
+                    const intersectedGridY = closestIdentifiedHitRecord.numericCoords[1];
+                    const intersectedGridZ = closestIdentifiedHitRecord.numericCoords[2];
+
+                    if (flagIsMiningActionExecution) {
+                        LiveBufferMatrixStreamingVisibilityManager.executeDynamicCellMutationBroadcast(intersectedGridX, intersectedGridY, intersectedGridZ, 0);
+                    } else {
+                        const actorCameraTrackingPos = RuntimeEngineGlobalStateVariables.threeJsMainCameraInstance.position;
+                        let evaluatedNormalOffsetX = 0, evaluatedNormalOffsetY = 0, evaluatedNormalOffsetZ = 0;
+
+                        const absoluteDeltaDistanceX = actorCameraTrackingPos.x - intersectedGridX;
+                        const absoluteDeltaDistanceY = actorCameraTrackingPos.y - intersectedGridY;
+                        const absoluteDeltaDistanceZ = actorCameraTrackingPos.z - intersectedGridZ;
+
+                        if (Math.abs(absoluteDeltaDistanceX) > Math.abs(absoluteDeltaDistanceY) && Math.abs(absoluteDeltaDistanceX) > Math.abs(absoluteDeltaDistanceZ)) {
+                            evaluatedNormalOffsetX = absoluteDeltaDistanceX > 0 ? 1 : -1;
+                        } else if (Math.abs(absoluteDeltaDistanceY) > Math.abs(absoluteDeltaDistanceX) && Math.abs(absoluteDeltaDistanceY) > Math.abs(absoluteDeltaDistanceZ)) {
+                            evaluatedNormalOffsetY = absoluteDeltaDistanceY > 0 ? 1 : -1;
+                        } else {
+                            evaluatedNormalOffsetZ = absoluteDeltaDistanceZ > 0 ? 1 : -1;
+                        }
+
+                        const prospectivePlacementTargetGridX = intersectedGridX + evaluatedNormalOffsetX;
+                        const prospectivePlacementTargetGridY = intersectedGridY + evaluatedNormalOffsetY;
+                        const prospectivePlacementTargetGridZ = intersectedGridZ + evaluatedNormalOffsetZ;
+
+                        const liveActorObjectCoordinates = RuntimeEngineGlobalStateVariables.pointerLockControlsInstance.getObject().position;
+                        if (Math.abs(prospectivePlacementTargetGridX - Math.round(liveActorObjectCoordinates.x)) < 1 && 
+                            Math.abs(prospectivePlacementTargetGridZ - Math.round(liveActorObjectCoordinates.z)) < 1 && 
+                            (prospectivePlacementTargetGridY === Math.floor(liveActorObjectCoordinates.y) || prospectivePlacementTargetGridY === Math.floor(liveActorObjectCoordinates.y - SYSTEM_CONSTANTS.PLAYER_PHYSICAL_HEIGHT))) {
+                            return; 
+                        }
+
+                        const workingSelectionBlockIdIndex = RuntimeEngineGlobalStateVariables.currentActiveHotbarArray[RuntimeEngineGlobalStateVariables.currentActiveHotbarSelectionIdx];
+                        LiveBufferMatrixStreamingVisibilityManager.executeDynamicCellMutationBroadcast(prospectivePlacementTargetGridX, prospectivePlacementTargetGridY, prospectivePlacementTargetGridZ, workingSelectionBlockIdIndex);
+                    }
                 }
-
-                // Fall out of environment boundary fail-safe recovery protocol check
-                if (actorTransformTargetObject.position.y < -30) {
-                    actorTransformTargetObject.position.set(8, 25, 8);
-                    actorMovementVelocity.y = 0;
-                }
-
-                // Update dynamic streaming sectors maps coordinates
-                synchronizeActiveChunkMapStreaming();
-
-                // Inject accurate system translation positions data metrics back into DOM layout dashboard tree nodes
-                document.getElementById('stat-xyz').innerText = `XYZ: ${actorTransformTargetObject.position.x.toFixed(2)} / ${actorTransformTargetObject.position.y.toFixed(2)} / ${actorTransformTargetObject.position.z.toFixed(2)}`;
             }
+        };
 
-            webglRenderer.render(gameScene, mainCamera);
-        }
+        const RigidBodyPhysicsSimulationEngineModule = {
+            evaluateBoundingCollisionsState: function(prospectivePositionTransformationVector) {
+                const subLayerMinBoundaryBoxX = Math.floor(prospectivePositionTransformationVector.x - SYSTEM_CONSTANTS.PLAYER_COLLISION_RADIUS);
+                const subLayerMaxBoundaryBoxX = Math.floor(prospectivePositionTransformationVector.x + SYSTEM_CONSTANTS.PLAYER_COLLISION_RADIUS);
+                const subLayerMinBoundaryBoxZ = Math.floor(prospectivePositionTransformationVector.z - SYSTEM_CONSTANTS.PLAYER_COLLISION_RADIUS);
+                const subLayerMaxBoundaryBoxZ = Math.floor(prospectivePositionTransformationVector.z + SYSTEM_CONSTANTS.PLAYER_COLLISION_RADIUS);
+                const subLayerMinBoundaryBoxY = Math.floor(prospectivePositionTransformationVector.y - SYSTEM_CONSTANTS.PLAYER_PHYSICAL_HEIGHT);
+                const subLayerMaxBoundaryBoxY = Math.floor(prospectivePositionTransformationVector.y);
 
-        // Initialize engine bootstrap on load completion validation passes
-        window.onload = entrypointBootloader;
+                for (let cx = subLayerMinBoundaryBoxX; cx <= subLayerMaxBoundaryBoxX; cx++) {
+                    for (let cy = subLayerMinBoundaryBoxY; cy <= subLayerMaxBoundaryBoxY; cy++) {
+                        for (let cz = subLayerMinBoundaryBoxZ; cz <= subLayerMaxBoundaryBoxZ; cz++) {
+                            const key = SegmentedVoxelDatabaseMemoryManager.generateGlobalKeyCoordinatesHash(cx, cy, cz);
+                            const id = SegmentedVoxelDatabaseMemoryManager.allocatedWorldDataBlocksMap[key];
+                            if (id && EngineGlobalVoxelRegistry[id].isSolid) return true; 
+                        }
+                    }
+                }
+                return false;
+            }
+        };
+
+        const InputManagementSubsystemRegistry = {
+            bindDeviceInputChannelListeners: function() {
+                document.addEventListener('keydown', (e) => {
+                    if (e.code === 'KeyE') { UserInterfaceDOMRenderingPipeline.toggleCreativeInventoryModalWindowOverlay(); e.preventDefault(); return; }
+                    if (e.code === 'KeyO') { UserInterfaceDOMRenderingPipeline.toggleSystemSettingsModalWindowOverlay(); e.preventDefault(); return; }
+                    if (RuntimeEngineGlobalStateVariables.isCreativeCatalogPanelActive || RuntimeEngineGlobalStateVariables.isSettingsControlPanelActive) return;
+
+                    switch (e.code) {
+                        case 'KeyW': ActorKineticTranslationalState.keyStateForwardActive = true; break;
+                        case 'KeyS': ActorKineticTranslationalState.keyStateBackwardActive = true; break;
+                        case 'KeyA': ActorKineticTranslationalState.keyStateLeftActive = true; break;     
+                        case 'KeyD': ActorKineticTranslationalState.keyStateRightActive = true; break;    
+                        case 'Space': 
+                            if (ActorKineticTranslationalState.actorIsOnGroundAnchor) {
+                                ActorKineticTranslationalState.actorCurrentVelocityVector.y = SYSTEM_CONSTANTS.PLAYER_VERTICAL_JUMP_VELOCITY;
+                                ActorKineticTranslationalState.actorIsOnGroundAnchor = false;
+                            }
+                            break;
+                        case 'Digit1': RuntimeEngineGlobalStateVariables.currentActiveHotbarSelectionIdx = 0; UserInterfaceDOMRenderingPipeline.updateHotbarHUDDisplayLayout(); break;
+                        case 'Digit2': RuntimeEngineGlobalStateVariables.currentActiveHotbarSelectionIdx = 1; UserInterfaceDOMRenderingPipeline.updateHotbarHUDDisplayLayout(); break;
+                        case 'Digit3': RuntimeEngineGlobalStateVariables.currentActiveHotbarSelectionIdx = 2; UserInterfaceDOMRenderingPipeline.updateHotbarHUDDisplayLayout(); break;
+                        case 'Digit4': RuntimeEngineGlobalStateVariables.currentActiveHotbarSelectionIdx = 3; UserInterfaceDOMRenderingPipeline.updateHotbarHUDDisplayLayout(); break;
+                        case 'Digit5': RuntimeEngineGlobalStateVariables.currentActiveHotbarSelectionIdx = 4; UserInterfaceDOMRenderingPipeline.updateHotbarHUDDisplayLayout(); break;
+                    }
+                });
+
+                document.addEventListener('keyup', (e) => {
+                    switch (e.code) {
+                        case 'KeyW': ActorKineticTranslationalState.keyStateForwardActive = false; break;
+                        case 'KeyS': ActorKineticTranslationalState.keyStateBackwardActive = false; break;
+                        case 'KeyA': ActorKineticTranslationalState.keyStateLeftActive = false; break;    
+                        case 'KeyD': ActorKineticTranslationalState.keyStateRightActive = false; break;   
+                    }
+                });
+
+                document.addEventListener('mousedown', (e) => {
+                    if (RuntimeEngineGlobalStateVariables.isCreativeCatalogPanelActive || RuntimeEngineGlobalStateVariables.isSettingsControlPanelActive || !RuntimeEngineGlobalStateVariables.pointerLockControlsInstance.isLocked) return;
+                    if (e.button === 0) AccurateCoordinateRaycasterEngine.fireTargetedActionRaycastPipeline(true);  
+                    if (e.button === 2) AccurateCoordinateRaycasterEngine.fireTargetedActionRaycastPipeline(false); 
+                });
+                document.addEventListener('contextmenu', e => e.preventDefault());
+            }
+        };
+
+        const UserInterfaceDOMRenderingPipeline = {
+            updateHotbarHUDDisplayLayout: function() {
+                const hotbarScreenContainerElement = document.getElementById('hotbar-screen-container');
+                hotbarScreenContainerElement.innerHTML = '';
+                RuntimeEngineGlobalStateVariables.currentActiveHotbarArray.forEach((voxelBlockId, currentSlotLoopIdx) => {
+                    const renderedSlotFrameNode = document.createElement('div');
+                    renderedSlotFrameNode.className = `hotbar-slot-frame ${currentSlotLoopIdx === RuntimeEngineGlobalStateVariables.currentActiveHotbarSelectionIdx ? 'selected-active' : ''}`;
+                    const itemPreviewBlockNode = document.createElement('div');
+                    itemPreviewBlockNode.className = 'v-item-preview';
+                    itemPreviewBlockNode.style.backgroundColor = '#' + EngineGlobalVoxelRegistry[voxelBlockId].color.toString(16);
+                    const slotIndexIndicatorLabel = document.createElement('div');
+                    slotIndexIndicatorLabel.className = 'slot-index-indicator';
+                    slotIndexIndicatorLabel.innerText = currentSlotLoopIdx + 1;
+                    renderedSlotFrameNode.appendChild(slotIndexIndicatorLabel);
+                    renderedSlotFrameNode.appendChild(itemPreviewBlockNode);
+                    hotbarScreenContainerElement.appendChild(renderedSlotFrameNode);
+                });
+            },
+            buildCreativeCatalogDOMGridElements: function() {
+                const catalogGridWrapperDOMRef = document.getElementById('dom-catalog-grid-wrapper');
+                catalogGridWrapperDOMRef.innerHTML = '';
+                Object.keys(EngineGlobalVoxelRegistry).forEach(registryStringIdKey => {
+                    const numericVoxelIdKey = Number(registryStringIdKey);
+                    const individualItemDataRecord = EngineGlobalVoxelRegistry[numericVoxelIdKey];
+                    const creativeTileNodeCard = document.createElement('div');
+                    creativeTileNodeCard.className = 'creative-item-tile-node';
+                    const tileColorPreviewSquare = document.createElement('div');
+                    tileColorPreviewSquare.className = 'v-item-preview';
+                    tileColorPreviewSquare.style.backgroundColor = '#' + individualItemDataRecord.color.toString(16);
+                    const tileLabelDescriptionNode = document.createElement('div');
+                    tileLabelDescriptionNode.className = 'tile-node-label';
+                    tileLabelDescriptionNode.innerText = individualItemDataRecord.name;
+                    creativeTileNodeCard.appendChild(tileColorPreviewSquare);
+                    creativeTileNodeCard.appendChild(tileLabelDescriptionNode);
+                    creativeTileNodeCard.onclick = () => {
+                        RuntimeEngineGlobalStateVariables.currentActiveHotbarArray[RuntimeEngineGlobalStateVariables.currentActiveHotbarSelectionIdx] = numericVoxelIdKey;
+                        this.updateHotbarHUDDisplayLayout();
+                        this.toggleCreativeInventoryModalWindowOverlay();
+                    };
+                    catalogGridWrapperDOMRef.appendChild(creativeTileNodeCard);
+                });
+            },
+            toggleCreativeInventoryModalWindowOverlay: function() {
+                if (RuntimeEngineGlobalStateVariables.isSettingsControlPanelActive) return;
+                RuntimeEngineGlobalStateVariables.isCreativeCatalogPanelActive = !RuntimeEngineGlobalStateVariables.isCreativeCatalogPanelActive;
+                const dynamicModalTargetDOMRef = document.getElementById('modal-creative-inventory');
+                if (RuntimeEngineGlobalStateVariables.isCreativeCatalogPanelActive) {
+                    this.buildCreativeCatalogDOMGridElements();
+                    dynamicModalTargetDOMRef.style.display = 'flex';
+                    RuntimeEngineGlobalStateVariables.pointerLockControlsInstance.unlock();
+                    ActorKineticTranslationalState.keyStateForwardActive = ActorKineticTranslationalState.keyStateBackwardActive = ActorKineticTranslationalState.keyStateLeftActive = ActorKineticTranslationalState.keyStateRightActive = false;
+                } else {
+                    dynamicModalTargetDOMRef.style.display = 'none';
+                    RuntimeEngineGlobalStateVariables.pointerLockControlsInstance.lock();
+                }
+            },
+            toggleSystemSettingsModalWindowOverlay: function() {
+                if (RuntimeEngineGlobalStateVariables.isCreativeCatalogPanelActive) return;
+                RuntimeEngineGlobalStateVariables.isSettingsControlPanelActive = !RuntimeEngineGlobalStateVariables.isSettingsControlPanelActive;
+                const dynamicSettingsTargetDOMRef = document.getElementById('modal-system-settings');
+                if (RuntimeEngineGlobalStateVariables.isSettingsControlPanelActive) {
+                    dynamicSettingsTargetDOMRef.style.display = 'flex';
+                    RuntimeEngineGlobalStateVariables.pointerLockControlsInstance.unlock();
+                    ActorKineticTranslationalState.keyStateForwardActive = ActorKineticTranslationalState.keyStateBackwardActive = ActorKineticTranslationalState.keyStateLeftActive = ActorKineticTranslationalState.keyStateRightActive = false;
+                } else {
+                    dynamicSettingsTargetDOMRef.style.display = 'none';
+                    RuntimeEngineGlobalStateVariables.pointerLockControlsInstance.lock();
+                }
+            },
+            hookGlobalUserInterfaceControlButtonsEvents: function() {
+                document.getElementById('btn-close-creative-gui').onclick = () => this.toggleCreativeInventoryModalWindowOverlay();
+                document.getElementById('btn-close-settings-gui').onclick = () => this.toggleSystemSettingsModalWindowOverlay();
+                document.getElementById('config-render-distance').onchange = (e) => {
+                    RuntimeEngineGlobalStateVariables.systemConfigRadiusRenderDistance = parseInt(e.target.value);
+                    LiveBufferMatrixStreamingVisibilityManager.synchronizeActiveSectorsStreamingPipeline();
+                };
+                document.getElementById('config-occlusion-mode').onchange = (e) => {
+                    RuntimeEngineGlobalStateVariables.systemConfigAggressiveCullingActive = (e.target.value === 'aggressive');
+                    Object.keys(SegmentedVoxelDatabaseMemoryManager.compiledGraphicChunkModulesMap).forEach(k => {
+                        const pts = k.split(',').map(Number);
+                        CompactBufferGeometryCompilerPipeline.executeSubChunkGeometryMeshCompilation(pts[0], pts[1], pts[2]);
+                    });
+                };
+                document.getElementById('config-res-scale').onchange = (e) => {
+                    RuntimeEngineGlobalStateVariables.threeJsRendererInstance.setPixelRatio(parseFloat(e.target.value));
+                    CoreApplicationBootstrapFramework.executeViewportResizeAdjustmentHandler();
+                };
+            }
+        };
+
+        const CoreApplicationBootstrapFramework = {
+            initializeApplicationInfrastructureSuite: function() {
+                const targetViewportContainerDOMRef = document.getElementById('viewport-canvas-container');
+                RuntimeEngineGlobalStateVariables.viewportDomContainerRef = targetViewportContainerDOMRef;
+
+                const targetSceneInstance = new THREE.Scene();
+                targetSceneInstance.background = new THREE.Color(0x7399e6);
+                targetSceneInstance.fog = new THREE.FogExp2(0x7399e6, 0.022);
+                RuntimeEngineGlobalStateVariables.threeJsSceneInstance = targetSceneInstance;
+
+                const trackingPerspectiveCameraInstance = new THREE.PerspectiveCamera(65, window.innerWidth / window.innerHeight, 0.1, 250);
+                trackingPerspectiveCameraInstance.position.set(8, 38, 8);
+                RuntimeEngineGlobalStateVariables.threeJsMainCameraInstance = trackingPerspectiveCameraInstance;
+
+                const directionalSunlightLightNode = new THREE.DirectionalLight(0xffffff, 0.72);
+                directionalSunlightLightNode.position.set(40, 80, 20);
+                targetSceneInstance.add(directionalSunlightLightNode);
+                targetSceneInstance.add(new THREE.AmbientLight(0xffffff, 0.42));
+
+                const optimizedWebGLRenderer = new THREE.WebGLRenderer({
+                    antialias: false,
+                    powerPreference: "high-performance",
+                    precision: "lowp"
+                });
+                optimizedWebGLRenderer.setSize(window.innerWidth, window.innerHeight);
+                optimizedWebGLRenderer.setPixelRatio(window.devicePixelRatio);
+                targetViewportContainerDOMRef.appendChild(optimizedWebGLRenderer.domElement);
+                RuntimeEngineGlobalStateVariables.threeJsRendererInstance = optimizedWebGLRenderer;
+
+                const applicationPointerLockControls = new THREE.PointerLockControls(trackingPerspectiveCameraInstance, document.body);
+                RuntimeEngineGlobalStateVariables.pointerLockControlsInstance = applicationPointerLockControls;
+
+                document.getElementById('btn-trigger-bootstrap-sequence').onclick = () => {
+                    if (!RuntimeEngineGlobalStateVariables.isCreativeCatalogPanelActive && !RuntimeEngineGlobalStateVariables.isSettingsControlPanelActive) {
+                        applicationPointerLockControls.lock();
+                    }
+                };
+                applicationPointerLockControls.addEventListener('lock', () => { document.getElementById('main-engine-blocker-screen').style.display = 'none'; });
+                applicationPointerLockControls.addEventListener('unlock', () => {
+                    if (!RuntimeEngineGlobalStateVariables.isCreativeCatalogPanelActive && !RuntimeEngineGlobalStateVariables.isSettingsControlPanelActive) {
+                        document.getElementById('main-engine-blocker-screen').style.display = 'flex';
+                    }
+                });
+                targetSceneInstance.add(applicationPointerLockControls.getObject());
+
+                InputManagementSubsystemRegistry.bindDeviceInputChannelListeners();
+                UserInterfaceDOMRenderingPipeline.hookGlobalUserInterfaceControlButtonsEvents();
+                UserInterfaceDOMRenderingPipeline.updateHotbarHUDDisplayLayout();
+                LiveBufferMatrixStreamingVisibilityManager.synchronizeActiveSectorsStreamingPipeline();
+
+                window.addEventListener('resize', this.executeViewportResizeAdjustmentHandler);
+                RuntimeEngineGlobalStateVariables.lastFrameMetricsCollectionTimestamp = performance.now();
+                this.fireMainRenderEngineTicksLoopThread();
+            },
+            executeViewportResizeAdjustmentHandler: function() {
+                RuntimeEngineGlobalStateVariables.threeJsMainCameraInstance.aspect = window.innerWidth / window.innerHeight;
+                RuntimeEngineGlobalStateVariables.threeJsMainCameraInstance.updateProjectionMatrix();
+                RuntimeEngineGlobalStateVariables.threeJsRendererInstance.setSize(window.innerWidth, window.innerHeight);
+            },
+            fireMainRenderEngineTicksLoopThread: function() {
+                const renderingTicksLoopReference = () => {
+                    requestAnimationFrame(renderingTicksLoopReference);
+                    const analyticalFrameDeltaDuration = Math.min(ActorKineticTranslationalState.frameDeltaClockInstance.getDelta(), 0.1);
+                    RuntimeEngineGlobalStateVariables.rollingFrameCounterMetric++;
+                    const timestampMetricsCaptureNow = performance.now();
+                    if (timestampMetricsCaptureNow >= RuntimeEngineGlobalStateVariables.lastFrameMetricsCollectionTimestamp + 1000) {
+                        document.getElementById('val-fps').innerText = `${RuntimeEngineGlobalStateVariables.rollingFrameCounterMetric} FPS`;
+                        RuntimeEngineGlobalStateVariables.rollingFrameCounterMetric = 0;
+                        RuntimeEngineGlobalStateVariables.lastFrameMetricsCollectionTimestamp = timestampMetricsCaptureNow;
+                    }
+
+                    const internalControlsInstance = RuntimeEngineGlobalStateVariables.pointerLockControlsInstance;
+                    if (internalControlsInstance.isLocked && !RuntimeEngineGlobalStateVariables.isCreativeCatalogPanelActive && !RuntimeEngineGlobalStateVariables.isSettingsControlPanelActive) {
+                        ActorKineticTranslationalState.actorCurrentVelocityVector.y -= SYSTEM_CONSTANTS.PHYSICAL_GRAVITY_ACCEL * analyticalFrameDeltaDuration;
+                        if (ActorKineticTranslationalState.actorCurrentVelocityVector.y < -SYSTEM_CONSTANTS.PHYSICAL_TERMINAL_VELOCITY) {
+                            ActorKineticTranslationalState.actorCurrentVelocityVector.y = -SYSTEM_CONSTANTS.PHYSICAL_TERMINAL_VELOCITY;
+                        }
+
+                        const horizontalMovementDirectionZ = Number(ActorKineticTranslationalState.keyStateForwardActive) - Number(ActorKineticTranslationalState.keyStateBackwardActive);
+                        const horizontalMovementDirectionX = Number(ActorKineticTranslationalState.keyStateRightActive) - Number(ActorKineticTranslationalState.keyStateLeftActive);
+
+                        const cameraOrientationLookVector = new THREE.Vector3();
+                        RuntimeEngineGlobalStateVariables.threeJsMainCameraInstance.getWorldDirection(cameraOrientationLookVector);
+                        cameraOrientationLookVector.y = 0;
+                        cameraOrientationLookVector.normalize();
+
+                        const spatialTransformCrossRightVector = new THREE.Vector3();
+                        spatialTransformCrossRightVector.crossVectors(cameraOrientationLookVector, RuntimeEngineGlobalStateVariables.threeJsMainCameraInstance.up).normalize();
+
+                        const realTimeTranslationStepVector = new THREE.Vector3();
+                        realTimeTranslationStepVector.addScaledVector(cameraOrientationLookVector, horizontalMovementDirectionZ);
+                        realTimeTranslationStepVector.addScaledVector(spatialTransformCrossRightVector, horizontalMovementDirectionX);
+                        realTimeTranslationStepVector.normalize().multiplyScalar(SYSTEM_CONSTANTS.PLAYER_HORIZONTAL_WALK_SPEED * analyticalFrameDeltaDuration);
+
+                        const targetActorTransformContainer = internalControlsInstance.getObject();
+                        targetActorTransformContainer.position.x += realTimeTranslationStepVector.x;
+                        if (RigidBodyPhysicsSimulationEngineModule.evaluateBoundingCollisionsState(targetActorTransformContainer.position)) targetActorTransformContainer.position.x -= realTimeTranslationStepVector.x;
+
+                        targetActorTransformContainer.position.z += realTimeTranslationStepVector.z;
+                        if (RigidBodyPhysicsSimulationEngineModule.evaluateBoundingCollisionsState(targetActorTransformContainer.position)) targetActorTransformContainer.position.z -= realTimeTranslationStepVector.z;
+
+                        targetActorTransformContainer.position.y += ActorKineticTranslationalState.actorCurrentVelocityVector.y * analyticalFrameDeltaDuration;
+                        if (RigidBodyPhysicsSimulationEngineModule.evaluateBoundingCollisionsState(targetActorTransformContainer.position)) {
+                            if (ActorKineticTranslationalState.actorCurrentVelocityVector.y < 0) ActorKineticTranslationalState.actorIsOnGroundAnchor = true; 
+                            targetActorTransformContainer.position.y -= ActorKineticTranslationalState.actorCurrentVelocityVector.y * analyticalFrameDeltaDuration;
+                            ActorKineticTranslationalState.actorCurrentVelocityVector.y = 0;
+                        }
+
+                        if (targetActorTransformContainer.position.y < -40.0) {
+                            targetActorTransformContainer.position.set(8.0, 42.0, 8.0);
+                            ActorKineticTranslationalState.actorCurrentVelocityVector.set(0, 0, 0);
+                        }
+
+                        LiveBufferMatrixStreamingVisibilityManager.synchronizeActiveSectorsStreamingPipeline();
+                        document.getElementById('val-xyz').innerText = `${targetActorTransformContainer.position.x.toFixed(2)} / ${targetActorTransformContainer.position.y.toFixed(2)} / ${targetActorTransformContainer.position.z.toFixed(2)}`;
+                    }
+                    RuntimeEngineGlobalStateVariables.threeJsRendererInstance.render(RuntimeEngineGlobalStateVariables.threeJsSceneInstance, RuntimeEngineGlobalStateVariables.threeJsMainCameraInstance);
+                };
+                renderingTicksLoopReference();
+            }
+        };
+
+        window.onload = () => CoreApplicationBootstrapFramework.initializeApplicationInfrastructureSuite();
     </script>
 </body>
 </html>
