@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>JS Voxel Craft</title>
+    <title>JS Voxel Craft Pro</title>
     <style>
         body {
             margin: 0;
@@ -32,7 +32,7 @@
             bottom: 20px;
             left: 50%;
             transform: translateX(-50%);
-            background: rgba(0, 0, 0, 0.5);
+            background: rgba(0, 0, 0, 0.6);
             padding: 10px;
             border-radius: 5px;
             display: flex;
@@ -49,32 +49,41 @@
             justify-content: center;
             color: white;
             font-weight: bold;
-            font-size: 12px;
+            font-size: 11px;
             position: relative;
         }
         .hotbar-slot.active {
             border-color: #fff;
             box-shadow: 0 0 10px #fff;
         }
-        .hotbar-slot::after {
-            content: attr(data-key);
-            position: absolute;
-            top: 20px;
-            left: 2px;
-            font-size: 10px;
-            color: #aaa;
-        }
         #block-label {
             position: absolute;
-            bottom: 90px;
+            bottom: 95px;
             left: 50%;
             transform: translateX(-50%);
             color: white;
-            background: rgba(0,0,0,0.6);
+            background: rgba(0,0,0,0.7);
             padding: 5px 15px;
             border-radius: 3px;
             font-size: 14px;
             pointer-events: none;
+        }
+        #mining-progress-container {
+            position: absolute;
+            top: 55%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80px;
+            height: 6px;
+            background: rgba(0,0,0,0.5);
+            border: 1px solid #fff;
+            display: none;
+            pointer-events: none;
+        }
+        #mining-bar {
+            width: 0%;
+            height: 100%;
+            background: #ffcc00;
         }
         #instructions {
             position: absolute;
@@ -92,16 +101,17 @@
             position: absolute;
             width: 100%;
             height: 100%;
-            background-color: rgba(0,0,0,0.7);
+            background-color: rgba(0,0,0,0.8);
             display: flex;
             justify-content: center;
             align-items: center;
             color: white;
             cursor: pointer;
             text-align: center;
+            z-index: 10;
         }
         #instructions-screen {
-            font-size: 24px;
+            font-size: 20px;
         }
     </style>
 </head>
@@ -109,124 +119,125 @@
     <div id="blocker">
         <div id="instructions-screen">
             <strong>Click to Play</strong><br><br>
-            W, A, S, D = Move<br>
-            SPACE = Jump<br>
+            W, A, S, D = Move | SPACE = Jump<br>
             MOUSE = Look Around<br>
-            LEFT CLICK = Destroy Block<br>
+            HOLD LEFT CLICK = Mine Block (Takes time!)<br>
             RIGHT CLICK = Place Block<br>
             1 - 5 = Select Material
         </div>
     </div>
 
     <div id="crosshair">+</div>
+    <div id="mining-progress-container"><div id="mining-bar"></div></div>
+    
     <div id="instructions">
         <strong>Controls:</strong> WASD (Move) | Space (Jump)<br>
-        Left Click (Break) | Right Click (Place)<br>
+        Hold Left Click (Mine) | Right Click (Place)<br>
         1-5 (Switch Block)
     </div>
     <div id="block-label">Grass Block</div>
     
     <div id="ui-container">
-        <div class="hotbar-slot active" data-key="1" style="background-color: #557a2b;">Grass</div>
-        <div class="hotbar-slot" data-key="2" style="background-color: #866043;">Dirt</div>
-        <div class="hotbar-slot" data-key="3" style="background-color: #737373;">Stone</div>
-        <div class="hotbar-slot" data-key="4" style="background-color: #a07f59;">Wood</div>
-        <div class="hotbar-slot" data-key="5" style="background-color: #eef9f9; color: #333;">Glass</div>
+        <div class="hotbar-slot active" style="background-color: #557a2b;">Grass</div>
+        <div class="hotbar-slot" style="background-color: #866043;">Dirt</div>
+        <div class="hotbar-slot" style="background-color: #737373;">Stone</div>
+        <div class="hotbar-slot" style="background-color: #a07f59;">Wood</div>
+        <div class="hotbar-slot" style="background-color: #eef9f9; color: #333;">Glass</div>
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/PointerLockControls.js"></script>
 
     <script>
-        // --- Game Configuration & State ---
+        // --- Game Setup & Settings ---
         const BLOCK_SIZE = 1;
-        const WORLD_SIZE = 32; // 32x32 blocks grid
-        const WORLD_HEIGHT = 16;
-        
+        const WORLD_SIZE = 40; // Size of map grid
+        const PLAYER_RADIUS = 0.35; // Size of player box for sliding wall collisions
+        const PLAYER_HEIGHT = 1.6;
+
         let scene, camera, renderer, controls;
-        let blocksWorld = {}; // Structure: "x,y,z" => { mesh, type }
-        let activeBlockType = 1; // Default to Grass
+        let blocksWorld = {}; 
+        let activeBlockType = 1;
         
-        // Player Physics State
+        // Input Controls
         let moveForward = false, moveBackward = false, moveLeft = false, moveRight = false;
+        let isMining = false;
         let canJump = false;
+        
         const velocity = new THREE.Vector3();
-        const direction = new THREE.Vector3();
-        const playerHeight = 1.6;
         const clock = new THREE.Clock();
 
-        // Block Types and Colors
+        // Block Durabilities (Time required to break in seconds)
         const blockTypes = {
-            1: { name: "Grass Block", color: 0x557a2b },
-            2: { name: "Dirt", color: 0x866043 },
-            3: { name: "Stone", color: 0x737373 },
-            4: { name: "Wood Planks", color: 0xa07f59 },
-            5: { name: "Glass", color: 0xddf2f2, transparent: true, opacity: 0.6 }
+            1: { name: "Grass Block", color: 0x557a2b, hardness: 0.5 },
+            2: { name: "Dirt", color: 0x866043, hardness: 0.4 },
+            3: { name: "Stone", color: 0x737373, hardness: 1.5 },
+            4: { name: "Wood Planks", color: 0xa07f59, hardness: 1.0 },
+            5: { name: "Glass", color: 0xddf2f2, transparent: true, opacity: 0.5, hardness: 0.2 }
         };
+
+        // Mining State Tracking
+        let currentMiningTarget = null;
+        let miningProgress = 0; // accumulated seconds spent mining
 
         const blocker = document.getElementById('blocker');
         const hotbarSlots = document.querySelectorAll('.hotbar-slot');
         const blockLabel = document.getElementById('block-label');
+        const progressBarContainer = document.getElementById('mining-progress-container');
+        const progressBar = document.getElementById('mining-bar');
 
-        // --- Core Initialization ---
         function init() {
-            // 1. Scene Setup
             scene = new THREE.Scene();
             scene.background = new THREE.Color(0xbfd1e5);
-            scene.fog = new THREE.FogExp2(0xbfd1e5, 0.05);
+            scene.fog = new THREE.FogExp2(0xbfd1e5, 0.04);
 
-            // 2. Camera Setup
             camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-            camera.position.set(WORLD_SIZE / 2, 10, WORLD_SIZE / 2);
+            
+            // Spawn player safely on top of generation height safely
+            camera.position.set(WORLD_SIZE / 2, 12, WORLD_SIZE / 2);
 
-            // 3. Lighting
-            const ambientLight = new THREE.AmbientLight(0xcccccc, 0.6);
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
             scene.add(ambientLight);
 
-            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.7);
-            directionalLight.position.set(20, 40, 20).normalize();
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.65);
+            directionalLight.position.set(20, 40, 10).normalize();
             scene.add(directionalLight);
 
-            // 4. Renderer
             renderer = new THREE.WebGLRenderer({ antialias: true });
             renderer.setPixelRatio(window.devicePixelRatio);
             renderer.setSize(window.innerWidth, window.innerHeight);
             document.body.appendChild(renderer.domElement);
 
-            // 5. Controls Hookup
             controls = new THREE.PointerLockControls(camera, document.body);
-            
             blocker.addEventListener('click', () => controls.lock());
             controls.addEventListener('lock', () => blocker.style.display = 'none');
-            controls.addEventListener('unlock', () => blocker.style.display = 'flex');
+            controls.addEventListener('unlock', () => {
+                blocker.style.display = 'flex';
+                resetMining();
+            });
             scene.add(controls.getObject());
 
-            // 6. Input Event Handlers
             setupInputs();
+            generateWorld();
 
-            // 7. Generate World Terrain
-            generateTerrain();
-
-            // 8. Start Loop
             window.addEventListener('resize', onWindowResize);
             animate();
         }
 
-        // --- Procedural Generation Logic ---
-        function generateTerrain() {
+        // --- Generates 3D Terrain Matrix ---
+        function generateWorld() {
             const geometry = new THREE.BoxGeometry(BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE);
 
             for (let x = 0; x < WORLD_SIZE; x++) {
                 for (let z = 0; z < WORLD_SIZE; z++) {
-                    
-                    // Simple deterministic Sine/Cosine generator acting as 2D terrain noise
-                    const heightValue = Math.sin(x * 0.2) * Math.cos(z * 0.2) * 2 + 4;
+                    // Standard multi-frequency math wave formula acting as realistic terrain noise
+                    const heightValue = Math.sin(x * 0.1) * Math.cos(z * 0.1) * 3 + Math.sin(x * 0.05) * 4 + 6;
                     const surfaceY = Math.floor(heightValue);
 
                     for (let y = 0; y <= surfaceY; y++) {
-                        let type = 3; // Stone layer default
-                        if (y === surfaceY) type = 1; // Grass top
-                        else if (y > surfaceY - 3) type = 2; // Dirt under-layer
+                        let type = 3; // Default Deep Stone
+                        if (y === surfaceY) type = 1; // Top Soil Grass
+                        else if (y > surfaceY - 3) type = 2; // Mid Soil Dirt
 
                         createBlock(x, y, z, type, geometry);
                     }
@@ -236,7 +247,7 @@
 
         function createBlock(x, y, z, type, sharedGeometry = null) {
             const key = `${x},${y},${z}`;
-            if (blocksWorld[key]) return; // Space already occupied
+            if (blocksWorld[key]) return;
 
             const geom = sharedGeometry || new THREE.BoxGeometry(BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE);
             const config = blockTypes[type];
@@ -254,93 +265,163 @@
             blocksWorld[key] = { mesh: mesh, type: type };
         }
 
-        // --- Interaction Rules (Break & Place) ---
-        function performRaycast(isDestroy) {
-            if (!controls.isLocked) return;
+        // --- Realistic 3D Box Collision Check ---
+        function checkCollision(position) {
+            // Predict box footprint corners based on physics body diameter limits
+            const minX = Math.floor(position.x - PLAYER_RADIUS);
+            const maxX = Math.floor(position.x + PLAYER_RADIUS);
+            const minZ = Math.floor(position.z - PLAYER_RADIUS);
+            const maxZ = Math.floor(position.z + PLAYER_RADIUS);
+            
+            const minY = Math.floor(position.y - PLAYER_HEIGHT);
+            const maxY = Math.floor(position.y);
+
+            // Scan adjacent coordinate boundaries for solid blocks
+            for (let x = minX; x <= maxX; x++) {
+                for (let y = minY; y <= maxY; y++) {
+                    for (let z = minZ; z <= maxZ; z++) {
+                        if (blocksWorld[`${x},${y},${z}`]) {
+                            return true; // Hit a block wall!
+                        }
+                    }
+                }
+            }
+            return false;
+        }
+
+        // --- Interaction Handlers (Mining Engine & Placements) ---
+        function updateMining(delta) {
+            if (!isMining || !controls.isLocked) {
+                resetMining();
+                return;
+            }
 
             const raycaster = new THREE.Raycaster();
-            // Vector center (0,0) targets the crosshair directly
             raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
-            
-            // Collect meshes for intersection calculations
             const targets = Object.values(blocksWorld).map(b => b.mesh);
             const intersects = raycaster.intersectObjects(targets);
 
-            if (intersects.length > 0 && intersects[0].distance < 6) {
-                const hit = intersects[0];
-                const blockMesh = hit.object;
+            if (intersects.length > 0 && intersects[0].distance < 5) {
+                const blockMesh = intersects[0].object;
                 const bp = blockMesh.position;
+                const currentKey = `${bp.x},${bp.y},${bp.z}`;
 
-                if (isDestroy) {
-                    // Remove Block
-                    const key = `${bp.x},${bp.y},${bp.z}`;
+                // If targeting a brand new block, reset timers
+                if (currentMiningTarget !== currentKey) {
+                    currentMiningTarget = currentKey;
+                    miningProgress = 0;
+                }
+
+                const blockData = blocksWorld[currentKey];
+                const totalHardness = blockTypes[blockData.type].hardness;
+
+                // Progress accumulation based on time framework
+                miningProgress += delta;
+                progressBarContainer.style.display = 'block';
+                progressBar.style.width = `${Math.min((miningProgress / totalHardness) * 100, 100)}%`;
+
+                // If time spent passes hardness threshold requirement, delete block instantly
+                if (miningProgress >= totalHardness) {
                     scene.remove(blockMesh);
                     blockMesh.geometry.dispose();
                     blockMesh.material.dispose();
-                    delete blocksWorld[key];
-                } else {
-                    // Place Block based on the targeted face normals
-                    const normal = hit.face.normal;
-                    const newX = Math.round(bp.x + normal.x);
-                    const newY = Math.round(bp.y + normal.y);
-                    const newZ = Math.round(bp.z + normal.z);
-
-                    // Block overlap check protection against placing inside yourself
-                    const pPos = controls.getObject().position;
-                    if (Math.abs(newX - Math.round(pPos.x)) < 1 && 
-                        Math.abs(newZ - Math.round(pPos.z)) < 1 && 
-                        (newY === Math.floor(pPos.y) || newY === Math.floor(pPos.y - playerHeight))) {
-                        return; 
-                    }
-
-                    createBlock(newX, newY, newZ, activeBlockType);
+                    delete blocksWorld[currentKey];
+                    resetMining();
                 }
+            } else {
+                resetMining();
             }
         }
 
-        // --- Inputs & Controls Mapping ---
+        function resetMining() {
+            isMining = false;
+            currentMiningTarget = null;
+            miningProgress = 0;
+            progressBarContainer.style.display = 'none';
+            progressBar.style.width = '0%';
+        }
+
+        function placeBlock() {
+            if (!controls.isLocked) return;
+
+            const raycaster = new THREE.Raycaster();
+            raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
+            const targets = Object.values(blocksWorld).map(b => b.mesh);
+            const intersects = raycaster.intersectObjects(targets);
+
+            if (intersects.length > 0 && intersects[0].distance < 5) {
+                const hit = intersects[0];
+                const bp = hit.object.position;
+                const normal = hit.face.normal;
+
+                const newX = Math.round(bp.x + normal.x);
+                const newY = Math.round(bp.y + normal.y);
+                const newZ = Math.round(bp.z + normal.z);
+
+                // Prevent placing block inside player's body boundaries
+                const tempPos = controls.getObject().position.clone();
+                const pMinX = Math.floor(tempPos.x - PLAYER_RADIUS);
+                const pMaxX = Math.floor(tempPos.x + PLAYER_RADIUS);
+                const pMinZ = Math.floor(tempPos.z - PLAYER_RADIUS);
+                const pMaxZ = Math.floor(tempPos.z + PLAYER_RADIUS);
+                const pMinY = Math.floor(tempPos.y - PLAYER_HEIGHT);
+                const pMaxY = Math.floor(tempPos.y);
+
+                if (newX >= pMinX && newX <= pMaxX && 
+                    newZ >= pMinZ && newZ <= pMaxZ && 
+                    newY >= pMinY && newY <= pMaxY) {
+                    return; // Block would collide with player footprint layout
+                }
+
+                createBlock(newX, newY, newZ, activeBlockType);
+            }
+        }
+
+        // --- Inputs Configurations ---
         function setupInputs() {
-            const onKeyDown = (event) => {
-                switch (event.code) {
+            document.addEventListener('keydown', (e) => {
+                switch (e.code) {
                     case 'KeyW': moveForward = true; break;
                     case 'KeyA': moveLeft = true; break;
                     case 'KeyS': moveBackward = true; break;
                     case 'KeyD': moveRight = true; break;
                     case 'Space':
-                        if (canJump === true) velocity.y += 7.5; // Jump strength
-                        canJump = false;
+                        if (canJump) {
+                            velocity.y = 7.0; // Jump force velocity push
+                            canJump = false;
+                        }
                         break;
-                    case 'Digit1': switchActiveSlot(1); break;
-                    case 'Digit2': switchActiveSlot(2); break;
-                    case 'Digit3': switchActiveSlot(3); break;
-                    case 'Digit4': switchActiveSlot(4); break;
-                    case 'Digit5': switchActiveSlot(5); break;
+                    case 'Digit1': switchSlot(1); break;
+                    case 'Digit2': switchSlot(2); break;
+                    case 'Digit3': switchSlot(3); break;
+                    case 'Digit4': switchSlot(4); break;
+                    case 'Digit5': switchSlot(5); break;
                 }
-            };
+            });
 
-            const onKeyUp = (event) => {
-                switch (event.code) {
+            document.addEventListener('keyup', (e) => {
+                switch (e.code) {
                     case 'KeyW': moveForward = false; break;
                     case 'KeyA': moveLeft = false; break;
                     case 'KeyS': moveBackward = false; break;
                     case 'KeyD': moveRight = false; break;
                 }
-            };
+            });
 
-            document.addEventListener('keydown', onKeyDown);
-            document.addEventListener('keyup', onKeyUp);
-            
-            // Mouse Clicks
             document.addEventListener('mousedown', (e) => {
                 if (!controls.isLocked) return;
-                if (e.button === 0) performRaycast(true);  // Left Click
-                if (e.button === 2) performRaycast(false); // Right Click
+                if (e.button === 0) isMining = true; // Hold Left Click to Mine
+                if (e.button === 2) placeBlock();    // Right click places blocks
+            });
+
+            document.addEventListener('mouseup', (e) => {
+                if (e.button === 0) resetMining();
             });
         }
 
-        function switchActiveSlot(index) {
+        function switchSlot(index) {
             activeBlockType = index;
-            hotbarSlots.forEach(slot => slot.classList.remove('active'));
+            hotbarSlots.forEach(s => s.classList.remove('active'));
             hotbarSlots[index - 1].classList.add('active');
             blockLabel.innerText = blockTypes[index].name;
         }
@@ -351,54 +432,77 @@
             renderer.setSize(window.innerWidth, window.innerHeight);
         }
 
-        // --- Game Engine Physics Loop ---
+        // --- Main Frame Game Loop ---
         function animate() {
             requestAnimationFrame(animate);
 
-            if (controls.isLocked === true) {
-                const delta = clock.getDelta();
+            if (controls.isLocked) {
+                const delta = Math.min(clock.getDelta(), 0.1); // Clamp delta to avoid deep wall glitches on frame drops
 
-                // Frictional slowdown factor
-                velocity.x -= velocity.x * 10.0 * delta;
-                velocity.z -= velocity.z * 10.0 * delta;
-                velocity.y -= 9.8 * 2.5 * delta; // Gravity scale factor
+                updateMining(delta);
 
-                direction.z = Number(moveForward) - Number(moveBackward);
-                direction.x = Number(moveRight) - Number(moveLeft);
-                direction.normalize();
+                // Apply Gravity Acceleration Simulation
+                velocity.y -= 22.0 * delta; 
 
-                if (moveForward || moveBackward) velocity.z -= direction.z * 40.0 * delta;
-                if (moveLeft || moveRight) velocity.x -= direction.x * 40.0 * delta;
+                // Determine keyboard movement values
+                const speed = 4.5;
+                let moveX = 0;
+                let moveZ = 0;
 
-                controls.moveRight(-velocity.x * delta);
-                controls.moveForward(-velocity.z * delta);
+                if (moveForward) moveZ -= 1;
+                if (moveBackward) moveZ += 1;
+                if (moveLeft) moveX -= 1;
+                if (moveRight) moveX += 1;
 
-                // Quick Vertical Position Evaluation (Basic Block Collisions)
+                // Translate flat movement into 3D Camera Direction orientation angles
+                const camDir = new THREE.Vector3();
+                camera.getWorldDirection(camDir);
+                camDir.y = 0;
+                camDir.normalize();
+
+                const camRight = new THREE.Vector3();
+                camRight.crossVectors(camDir, camera.up).normalize().negate();
+
+                const finalMove = new THREE.Vector3();
+                finalMove.addScaledVector(camDir, moveZ);
+                finalMove.addScaledVector(camRight, moveX);
+                finalMove.normalize().multiplyScalar(speed * delta);
+
+                // --- AXIS SPLIT SEPARATE COLLISION RESOLUTION ---
                 const playerObj = controls.getObject();
-                playerObj.position.y += (velocity.y * delta);
-
-                const pX = Math.round(playerObj.position.x);
-                const pZ = Math.round(playerObj.position.z);
-                const pYFloor = Math.floor(playerObj.position.y - playerHeight);
-
-                // Floor collision matching current ground grid profile mapping
-                if (blocksWorld[`${pX},${pYFloor},${pZ}`]) {
-                    velocity.y = 0;
-                    playerObj.position.y = pYFloor + 1 + playerHeight;
-                    canJump = true;
-                }
                 
-                // Keep player from falling out of the void boundaries endlessly
-                if (playerObj.position.y < -20) {
+                // 1. Check & Resolve X movement safely
+                playerObj.position.x += finalMove.x;
+                if (checkCollision(playerObj.position)) {
+                    playerObj.position.x -= finalMove.x; // Revert if wall hit
+                }
+
+                // 2. Check & Resolve Z movement safely
+                playerObj.position.z += finalMove.z;
+                if (checkCollision(playerObj.position)) {
+                    playerObj.position.z -= finalMove.z; // Revert if wall hit
+                }
+
+                // 3. Check & Resolve Vertical Gravity physics movement safely
+                playerObj.position.y += velocity.y * delta;
+                if (checkCollision(playerObj.position)) {
+                    if (velocity.y < 0) {
+                        canJump = true; // Landing on floor reset
+                    }
+                    playerObj.position.y -= velocity.y * delta; // Snap position directly above/below obstacle hit
                     velocity.y = 0;
-                    playerObj.position.set(WORLD_SIZE / 2, 12, WORLD_SIZE / 2);
+                }
+
+                // Safety boundaries fallback loop reset
+                if (playerObj.position.y < -30) {
+                    playerObj.position.set(WORLD_SIZE / 2, 15, WORLD_SIZE / 2);
+                    velocity.y = 0;
                 }
             }
 
             renderer.render(scene, camera);
         }
 
-        // Start initialization process on runtime boot
         init();
     </script>
 </body>
