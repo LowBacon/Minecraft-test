@@ -3,22 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Advanced Voxel Engine Framework</title>
+    <title>VoxelCraft Pro Ultra Performance Engine</title>
     <style>
         * {
             box-sizing: border-box;
             user-select: none;
-        }
-        body, html {
             margin: 0;
             padding: 0;
+        }
+        body, html {
             width: 100%;
             height: 100%;
             overflow: hidden;
             background-color: #8cb1fc;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
-        #canvas-container {
+        #canvas-viewport {
             width: 100%;
             height: 100%;
             position: absolute;
@@ -26,178 +26,203 @@
             left: 0;
             z-index: 1;
         }
-        #crosshair {
+        #crosshair-pointer {
             position: absolute;
             top: 50%;
             left: 50%;
-            width: 20px;
-            height: 20px;
+            width: 18px;
+            height: 18px;
             transform: translate(-50%, -50%);
             pointer-events: none;
             z-index: 10;
         }
-        #crosshair::before, #crosshair::after {
+        #crosshair-pointer::before, #crosshair-pointer::after {
             content: '';
             position: absolute;
-            background: rgba(255, 255, 255, 0.85);
+            background: rgba(255, 255, 255, 0.9);
             mix-blend-mode: difference;
         }
-        #crosshair::before {
-            top: 9px;
+        #crosshair-pointer::before {
+            top: 8px;
             left: 0;
-            width: 20px;
+            width: 18px;
             height: 2px;
         }
-        #crosshair::after {
+        #crosshair-pointer::after {
             top: 0;
-            left: 9px;
+            left: 8px;
             width: 2px;
-            height: 20px;
+            height: 18px;
         }
-        #hud-container {
+        #hud-dashboard {
             position: absolute;
-            top: 20px;
-            left: 20px;
+            top: 15px;
+            left: 15px;
             z-index: 5;
             color: #ffffff;
             font-family: 'Courier New', Courier, monospace;
-            font-size: 14px;
-            text-shadow: 2px 2px 0px #000000;
-            background: rgba(0, 0, 0, 0.4);
-            padding: 15px;
+            font-size: 13px;
+            text-shadow: 1px 1px 2px #000000;
+            background: rgba(20, 20, 20, 0.75);
+            padding: 12px;
             border-radius: 4px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.15);
             pointer-events: none;
-            line-height: 1.5;
+            line-height: 1.6;
         }
-        #hotbar-container {
+        #hotbar-wrapper {
             position: absolute;
-            bottom: 20px;
+            bottom: 15px;
             left: 50%;
             transform: translateX(-50%);
             z-index: 5;
-            background: rgba(30, 30, 30, 0.85);
-            border: 4px solid #4a4a4a;
-            border-radius: 2px;
+            background: rgba(35, 35, 35, 0.9);
+            border: 3px solid #3c3c3c;
+            border-radius: 4px;
             display: flex;
-            padding: 2px;
-            box-shadow: 0px 10px 20px rgba(0,0,0,0.5);
+            padding: 4px;
+            box-shadow: 0px 8px 16px rgba(0,0,0,0.6);
         }
-        .hotbar-slot {
-            width: 50px;
-            height: 50px;
-            border: 4px solid #8b8b8b;
-            background-color: #2e2e2e;
-            margin: 2px;
+        .hotbar-slot-node {
+            width: 46px;
+            height: 46px;
+            border: 3px solid #777777;
+            background-color: #222222;
+            margin: 0 3px;
             display: flex;
             align-items: center;
             justify-content: center;
             position: relative;
             cursor: pointer;
-        }
-        .hotbar-slot.active {
-            border-color: #ffffff;
-            box-shadow: inset 0 0 5px rgba(0,0,0,0.8);
-            z-index: 6;
-        }
-        .slot-preview {
-            width: 32px;
-            height: 32px;
             border-radius: 2px;
         }
-        .slot-number {
+        .hotbar-slot-node.active-slot {
+            border-color: #00ffcc;
+            box-shadow: 0 0 8px #00ffcc;
+        }
+        .node-preview {
+            width: 28px;
+            height: 28px;
+        }
+        .node-index {
             position: absolute;
-            top: 2px;
-            left: 4px;
-            font-size: 10px;
-            color: #aaaaaa;
-            font-family: sans-serif;
+            top: 1px;
+            left: 3px;
+            font-size: 9px;
+            color: #bbbbbb;
             font-weight: bold;
         }
-        #creative-inventory-overlay {
+        .ui-overlay-panel {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.6);
+            background: rgba(0, 0, 0, 0.65);
             z-index: 100;
             display: none;
             align-items: center;
             justify-content: center;
         }
-        .inventory-window {
-            width: 450px;
-            background: #c6c6c6;
-            border: 4px solid #555555;
-            border-top-color: #ffffff;
-            border-left-color: #ffffff;
-            padding: 20px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+        .window-frame {
+            width: 500px;
+            background: #2d2d2d;
+            border: 3px solid #555555;
+            border-radius: 6px;
+            padding: 25px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.7);
+            color: #ffffff;
         }
-        .inventory-title {
-            font-size: 16px;
-            color: #2c2c2c;
+        .frame-title {
+            font-size: 18px;
+            color: #00ffcc;
             font-weight: bold;
-            margin-bottom: 15px;
+            margin-bottom: 20px;
             text-transform: uppercase;
             letter-spacing: 1px;
+            border-bottom: 2px solid #444;
+            padding-bottom: 8px;
         }
-        .inventory-grid {
+        .settings-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .settings-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #363636;
+            padding: 10px 15px;
+            border-radius: 4px;
+        }
+        .settings-label {
+            font-size: 14px;
+            font-weight: 500;
+        }
+        .settings-control select, .settings-control input {
+            background: #222;
+            color: #fff;
+            border: 1px solid #555;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            outline: none;
+        }
+        .settings-control select:hover {
+            border-color: #00ffcc;
+        }
+        .catalog-grid {
             display: grid;
-            grid-template-columns: repeat(6, 1fr);
-            gap: 10px;
-            max-height: 300px;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 12px;
+            max-height: 280px;
             overflow-y: auto;
-            background: #8b8b8b;
-            padding: 10px;
-            border: 4px solid #ffffff;
-            border-top-color: #555555;
-            border-left-color: #555555;
+            background: #1e1e1e;
+            padding: 12px;
+            border-radius: 4px;
+            border: 1px solid #444;
         }
-        .inventory-item-card {
+        .catalog-item-card {
             aspect-ratio: 1;
-            background: #8b8b8b;
-            border: 2px solid #373737;
-            border-top-color: #ffffff;
-            border-left-color: #ffffff;
+            background: #2a2a2a;
+            border: 2px solid #444;
+            border-radius: 4px;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            padding: 5px;
+            padding: 8px;
+            transition: all 0.15s ease;
         }
-        .inventory-item-card:hover {
-            background: #9c9c9c;
-            border-color: #ffffff;
-            border-top-color: #373737;
-            border-left-color: #373737;
+        .catalog-item-card:hover {
+            background: #333;
+            border-color: #00ffcc;
+            transform: scale(1.03);
         }
-        .inventory-item-card .slot-preview {
-            width: 40px;
-            height: 40px;
+        .catalog-item-card .node-preview {
+            width: 36px;
+            height: 36px;
         }
-        .item-label {
-            font-size: 9px;
-            color: #fff;
-            background: rgba(0,0,0,0.5);
-            padding: 1px 4px;
-            border-radius: 2px;
-            margin-top: 4px;
+        .card-label {
+            font-size: 10px;
+            color: #ccc;
+            margin-top: 6px;
             text-align: center;
             width: 100%;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
         }
-        #blocker-screen {
+        #system-blocker-screen {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(15, 15, 15, 0.85);
+            background: rgba(10, 10, 10, 0.9);
             z-index: 200;
             display: flex;
             align-items: center;
@@ -205,75 +230,120 @@
             color: #ffffff;
             text-align: center;
         }
-        .menu-box {
-            background: rgba(30, 30, 30, 0.8);
-            border: 2px solid #555;
-            padding: 40px;
+        .launcher-box {
+            background: #1f1f1f;
+            border: 2px solid #333;
+            padding: 45px;
             border-radius: 8px;
-            box-shadow: 0 0 30px rgba(0,0,0,0.7);
-            max-width: 500px;
+            box-shadow: 0 0 40px rgba(0,0,0,0.8);
+            max-width: 520px;
+            width: 100%;
         }
-        .start-btn {
-            background: #4caf50;
-            color: white;
+        .action-btn {
+            background: #00ffcc;
+            color: #111;
             border: none;
-            padding: 12px 40px;
-            font-size: 18px;
+            padding: 14px 45px;
+            font-size: 16px;
             font-weight: bold;
             margin-top: 25px;
             cursor: pointer;
             border-radius: 4px;
-            transition: background 0.2s;
+            transition: all 0.2s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
         }
-        .start-btn:hover {
-            background: #43a047;
+        .action-btn:hover {
+            background: #00ccaa;
+            box-shadow: 0 0 15px rgba(0,255,204,0.4);
         }
-        #loading-text {
-            color: #ffaa00;
+        .footer-close-tip {
+            font-size: 12px; 
+            color: #888; 
+            margin-top: 15px; 
             font-weight: bold;
-            margin-top: 15px;
+            text-align: center;
         }
     </style>
 </head>
 <body>
 
-    <div id="canvas-container"></div>
-    <div id="crosshair"></div>
+    <div id="canvas-viewport"></div>
+    <div id="crosshair-pointer"></div>
 
-    <div id="hud-container">
-        <strong>VOXEL ENGINE CORE v2.5</strong><br>
-        <span id="ui-fps">FPS: --</span><br>
-        <span id="ui-coords">XYZ: 0.00 / 0.00 / 0.00</span><br>
-        <span id="ui-chunk">Current Chunk: [0, 0]</span><br>
-        <span id="ui-blocks">Active Blocks in Cache: 0</span><br>
-        <span id="ui-time">Time of Day: 06:00</span>
+    <div id="hud-dashboard">
+        <strong>VOXEL ENGINE ULTRA v3.0</strong><br>
+        <span id="stat-fps">FPS: --</span><br>
+        <span id="stat-xyz">XYZ: 0.00 / 0.00 / 0.00</span><br>
+        <span id="stat-chunk-id">Chunk Vector: [0, 0]</span><br>
+        <span id="stat-cached-blocks">Allocated Cells: 0</span><br>
+        <span id="stat-mode">Render Mode: Standard Buffer</span>
     </div>
 
-    <div id="creative-inventory-overlay">
-        <div class="inventory-window">
-            <div class="inventory-title">Creative Blocks Registry</div>
-            <div class="inventory-grid" id="registry-grid"></div>
-            <p style="font-size:11px; color:#555; margin-top:10px; font-weight:bold;">Click item to replace active hotbar slot. Press 'E' to exit.</p>
+    <div id="settings-menu-overlay" class="ui-overlay-panel">
+        <div class="window-frame">
+            <div class="frame-title">System Graphics Settings</div>
+            <div class="settings-grid">
+                <div class="settings-row">
+                    <div class="settings-label">Render Distance (Chunks)</div>
+                    <div class="settings-control">
+                        <select id="setting-render-distance">
+                            <option value="1">1 Chunk (Ultra Low End)</option>
+                            <option value="2" selected>2 Chunks (Balanced Laptop)</option>
+                            <option value="3">3 Chunks (Standard)</option>
+                            <option value="4">4 Chunks (High Performance)</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="settings-row">
+                    <div class="settings-label">Performance Geometry Optimization</div>
+                    <div class="settings-control">
+                        <select id="setting-culling-mode">
+                            <option value="aggressive" selected>Aggressive Occlusion (Less Lag)</option>
+                            <option value="standard">Standard Occlusion</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="settings-row">
+                    <div class="settings-label">Resolution Scaling Factor</div>
+                    <div class="settings-control">
+                        <select id="setting-res-scale">
+                            <option value="0.75">0.75x (Boost FPS)</option>
+                            <option value="1.0" selected>1.0x Native Quality</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <button class="action-btn" style="width:100%; margin-top:10px;" id="btn-close-settings">Save and Resume</button>
+            <div class="footer-close-tip">Press [ ESC ] or [ O ] to quick toggle options</div>
         </div>
     </div>
 
-    <div id="hotbar-container" id="hotbar-slots-wrapper"></div>
+    <div id="creative-hub-overlay" class="ui-overlay-panel">
+        <div class="window-frame">
+            <div class="frame-title">Creative Hub Selection</div>
+            <div class="catalog-grid" id="catalog-dom-grid"></div>
+            <button class="action-btn" style="width:100%; margin-top:15px;" id="btn-close-hub">Return To Build</button>
+            <div class="footer-close-tip">Press [ E ] to quickly toggle block hub panel</div>
+        </div>
+    </div>
 
-    <div id="blocker-screen" id="blocker">
-        <div class="menu-box">
-            <h1 style="margin: 0 0 10px 0; color: #4caf50;">VoxelCraft Infinite</h1>
-            <p style="color: #bbb; margin: 0 0 20px 0;">Production-grade modular client-side engine simulation.</p>
-            <div style="text-align: left; background: rgba(0,0,0,0.4); padding: 15px; font-family: monospace; font-size: 13px; line-height: 1.6;">
-                • <b style="color:#fff;">W, S</b> : Forward / Backward<br>
-                • <b style="color:#fff;">A, D</b> : Left / Right (Fixed Navigation)<br>
-                • <b style="color:#fff;">SPACE</b> : Vertical Jump<br>
-                • <b style="color:#fff;">LEFT CLICK</b> : Instant Mine Voxel<br>
-                • <b style="color:#fff;">RIGHT CLICK</b> : Build Selected Voxel<br>
-                • <b style="color:#fff;">E KEY</b> : Toggle Creative Catalog Overlay<br>
-                • <b style="color:#fff;">1 - 5 KEYS</b> : Swap Hotbar Buffer Selector
+    <div id="hotbar-wrapper"></div>
+
+    <div id="system-blocker-screen">
+        <div class="launcher-box">
+            <h1 style="margin: 0 0 10px 0; color: #00ffcc; font-size: 28px; letter-spacing: 1px;">VOXELCRAFT LITE</h1>
+            <p style="color: #888; margin: 0 0 25px 0; font-size: 14px;">Lag-Free Voxel Module Optimization Engine Pipeline.</p>
+            <div style="text-align: left; background: #141414; padding: 18px; font-family: monospace; font-size: 13px; line-height: 1.7; border-radius: 4px; border: 1px solid #2a2a2a; margin-bottom: 10px;">
+                • <b style="color:#00ffcc;">W, A, S, D</b> : Navigation controls (Fully Fixed Map Vector)<br>
+                • <b style="color:#00ffcc;">SPACEBAR</b> : Vertical Jump Translation Force<br>
+                • <b style="color:#00ffcc;">LEFT CLICK</b> : Instant Destruct Crosshair Voxel Block<br>
+                • <b style="color:#00ffcc;">RIGHT CLICK</b> : Build Target Face Voxel Block<br>
+                • <b style="color:#00ffcc;">E KEY</b> : Open Creative Hub Item Registry Catalog<br>
+                • <b style="color:#00ffcc;">O KEY</b> : Open Performance Options & Render Distance Panel<br>
+                • <b style="color:#00ffcc;">1 - 5 NUMBERS</b> : Hotbar Block Allocation Slots Selector
             </div>
-            <button class="start-btn" id="btn-start">GENERATE ENVIRONMENT</button>
-            <div id="loading-text">Initializing Engine Buffers...</div>
+            <button class="action-btn" id="btn-initialize-world">Spawn Into World</button>
         </div>
     </div>
 
@@ -282,288 +352,223 @@
 
     <script>
         /**
-         * GLOBAL ENGINE ARCHITECTURE DECLARATION
+         * GLOBAL ENGINE RUNTIME ARCHITECTURE SPECIFICATIONS
          */
-        const CONFIG = {
+        const ENGINE_CONFIG = {
             CHUNK_SIZE: 16,
-            CHUNK_HEIGHT: 64,
-            VIEW_DISTANCE: 3, 
-            PLAYER_RADIUS: 0.30,
-            PLAYER_HEIGHT: 1.65,
-            GRAVITY: 22.0,
-            TERMINAL_VELOCITY: 50.0,
-            WALK_SPEED: 6.5,
-            JUMP_FORCE: 7.5
+            CHUNK_HEIGHT: 32,
+            PLAYER_RADIUS: 0.28,
+            PLAYER_HEIGHT: 1.62,
+            GRAVITY: 21.0,
+            MAX_FALL_SPEED: 45.0,
+            WALK_VELOCITY: 6.2,
+            JUMP_IMPULSE: 7.2,
+            REACH_DISTANCE: 6.0
         };
 
-        // Static Definitive Registry Mapping
-        const BlockRegistry = {
-            1: { name: "Grass Top",   color: 0x5a8f35, solid: true,  opacity: 1.0, transparent: false },
-            2: { name: "Dirt Under",  color: 0x866043, solid: true,  opacity: 1.0, transparent: false },
-            3: { name: "Hard Stone",  color: 0x737373, solid: true,  opacity: 1.0, transparent: false },
-            4: { name: "Bedrock Floor",color: 0x222222, solid: true,  opacity: 1.0, transparent: false },
-            5: { name: "Oak Trunk",   color: 0x6b4e31, solid: true,  opacity: 1.0, transparent: false },
-            6: { name: "Oak Leaves",  color: 0x3c6424, solid: true,  opacity: 0.9, transparent: true  },
-            7: { name: "Sand Layer",  color: 0xded292, solid: true,  opacity: 1.0, transparent: false },
-            8: { name: "Water Basin", color: 0x4775c4, solid: false, opacity: 0.6, transparent: true  },
-            9: { name: "Glass Sheet",  color: 0xffffff, solid: true,  opacity: 0.4, transparent: true  },
-            10:{ name: "Red Brick",   color: 0xb0433a, solid: true,  opacity: 1.0, transparent: false },
-            11:{ name: "Coal Ore",    color: 0x3d3d3d, solid: true,  opacity: 1.0, transparent: false },
-            12:{ name: "Gold Block",  color: 0xfccb42, solid: true,  opacity: 1.0, transparent: false }
+        // Complete Optimized Structural Registry Matrix Mapping Definitions
+        const BlockSystemRegistry = {
+            1: { name: "Grass Block", color: 0x5c8e32, solid: true },
+            2: { name: "Soil Dirt",   color: 0x866043, solid: true },
+            3: { name: "Grey Stone",  color: 0x737373, solid: true },
+            4: { name: "Wood Log",    color: 0x6b4e31, solid: true },
+            5: { name: "Leaf Bush",   color: 0x3c6424, solid: true },
+            6: { name: "Craft Plank", color: 0xbfa26f, solid: true },
+            7: { name: "Glass Layer", color: 0xdff5f5, solid: true },
+            8: { name: "Water Fluid", color: 0x4775c4, solid: false },
+            9: { name: "Clay Brick",  color: 0xb0433a, solid: true },
+            10: { name: "Gold Alloy", color: 0xfccb42, solid: true }
         };
 
-        // Engine Context Variables
-        let container, scene, camera, renderer, controls;
-        let worldStorage = {}; 
-        let chunkMeshes = {};  
-        let hotbarSlots = [1, 2, 3, 5, 9]; 
-        let activeHotbarIndex = 0;
-        let isInventoryOpen = false;
-        let fpsCounter = 0, lastFpsUpdate = 0;
+        // Engine State Architecture Vectors
+        let viewportContainer, gameScene, mainCamera, webglRenderer, navigationControls;
+        let globalBlockMatrixData = {}; 
+        let globalChunkMeshNodeMap = {};  
+        let runtimeHotbarArray = [1, 2, 3, 4, 7]; 
+        let currentHotbarSelectedIdx = 0;
+        
+        // Modal Flags States
+        let isCreativeHubPanelOpen = false;
+        let isSettingsPanelOpen = false;
+        
+        // Diagnostic Metric Tracking Counters
+        let systemFramesCounter = 0, systemLastFpsTimestamp = 0;
 
-        // Player Physical Translation Tracking Vectors
-        let moveForward = false, moveBackward = false, moveLeft = false, moveRight = false;
-        let playerOnGround = false;
-        const currentVelocity = new THREE.Vector3();
-        const deltaClock = new THREE.Clock();
+        // Dynamic System Adjustable Properties Models
+        let activeRenderDistanceSetting = 2;
+        let activeAggressiveCullingSetting = true;
 
-        // Environment Dynamic Mechanics variables
-        let environmentTime = 0.25; 
-        let skyLight, ambientLight;
+        // Actor Mechanics Translational Vectors
+        let inputStateForward = false, inputStateBackward = false, inputStateLeft = false, inputStateRight = false;
+        let actorStateIsOnGround = false;
+        const actorMovementVelocity = new THREE.Vector3();
+        const systemClock = new THREE.Clock();
 
-        // Particle System Module
-        const ParticleSystem = {
-            pool: [],
-            maxParticles: 150,
+        // High-Speed Math Noise Implementation Object
+        const InternalProceduralNoiseGenerator = {
+            hashTable: new Uint8Array(512),
+            isReady: false,
             init: function() {
-                const geometry = new THREE.BoxGeometry(0.1, 0.1, 0.1);
-                for(let i=0; i < this.maxParticles; i++) {
-                    const material = new THREE.MeshBasicMaterial({color: 0xffffff});
-                    const mesh = new THREE.Mesh(geometry, material);
-                    mesh.visible = false;
-                    scene.add(mesh);
-                    this.pool.push({
-                        mesh: mesh,
-                        active: false,
-                        velocity: new THREE.Vector3(),
-                        life: 0,
-                        maxLife: 0
-                    });
-                }
-            },
-            spawn: function(x, y, z, color, count = 8) {
-                let spawned = 0;
-                for(let i=0; i < this.pool.length; i++) {
-                    if(!this.pool[i].active) {
-                        const p = this.pool[i];
-                        p.active = true;
-                        p.mesh.visible = true;
-                        p.mesh.position.set(x + (Math.random() - 0.5)*0.5, y + (Math.random() - 0.5)*0.5, z + (Math.random() - 0.5)*0.5);
-                        p.mesh.material.color.setHex(color);
-                        p.velocity.set((Math.random() - 0.5) * 4, Math.random() * 5 + 2, (Math.random() - 0.5) * 4);
-                        p.life = 0;
-                        p.maxLife = 0.4 + Math.random() * 0.3;
-                        spawned++;
-                        if(spawned >= count) break;
-                    }
-                }
-            },
-            update: function(delta) {
-                for(let i=0; i < this.pool.length; i++) {
-                    const p = this.pool[i];
-                    if(p.active) {
-                        p.life += delta;
-                        if(p.life >= p.maxLife) {
-                            p.active = false;
-                            p.mesh.visible = false;
-                        } else {
-                            p.velocity.y -= 9.8 * delta; 
-                            p.mesh.position.addScaledVector(p.velocity, delta);
-                        }
-                    }
-                }
-            }
-        };
-
-        // Deterministic Noise Generator Module
-        const MathNoiseEvaluator = {
-            permutation: new Uint8Array(512),
-            init: function() {
-                const source = new Uint8Array(256);
-                for (let i = 0; i < 256; i++) source[i] = i;
+                const intermediateBuffer = new Uint8Array(256);
+                for (let i = 0; i < 256; i++) intermediateBuffer[i] = i;
                 for (let i = 255; i > 0; i--) {
-                    const j = Math.floor(Math.random() * (i + 1));
-                    const tmp = source[i];
-                    source[i] = source[j];
-                    source[j] = tmp;
+                    const swapIdx = Math.floor(Math.random() * (i + 1));
+                    const temporaryHold = intermediateBuffer[i];
+                    intermediateBuffer[i] = intermediateBuffer[swapIdx];
+                    intermediateBuffer[swapIdx] = temporaryHold;
                 }
                 for (let i = 0; i < 256; i++) {
-                    this.permutation[i] = source[i];
-                    this.permutation[i + 256] = source[i];
+                    this.hashTable[i] = intermediateBuffer[i];
+                    this.hashTable[i + 256] = intermediateBuffer[i];
                 }
+                this.isReady = true;
             },
-            fade: function(t) { return t * t * t * (t * (t * 6 - 15) + 10); },
-            lerp: function(t, a, b) { return a + t * (b - a); },
-            grad: function(hash, x, y) {
-                const h = hash & 7;
-                const u = h < 4 ? x : y;
-                const v = h < 4 ? y : x;
-                return ((h & 1) ? -u : u) + ((h & 2) ? -2.0 * v : 2.0 * v);
+            fadeCurve: function(t) { return t * t * t * (t * (t * 6 - 15) + 10); },
+            linearInterpolate: function(t, a, b) { return a + t * (b - a); },
+            calculateGradientFactor: function(hash, x, z) {
+                const mask = hash & 7;
+                const coordinateU = mask < 4 ? x : z;
+                const coordinateV = mask < 4 ? z : x;
+                return ((mask & 1) ? -coordinateU : coordinateU) + ((mask & 2) ? -2.0 * coordinateV : 2.0 * coordinateV);
             },
-            evaluate2D: function(x, y) {
-                const X = Math.floor(x) & 255;
-                const Y = Math.floor(y) & 255;
-                const xf = x - Math.floor(x);
-                const yf = y - Math.floor(y);
-                const u = this.fade(xf);
-                const v = this.fade(yf);
-                const aa = this.permutation[this.permutation[X] + Y];
-                const ab = this.permutation[this.permutation[X] + Y + 1];
-                const ba = this.permutation[this.permutation[X + 1] + Y];
-                const bb = this.permutation[this.permutation[X + 1] + Y + 1];
-                return this.lerp(v, this.lerp(u, this.grad(aa, xf, yf), this.grad(ba, xf - 1, yf)),
-                                   this.lerp(u, this.grad(ab, xf, yf - 1), this.grad(bb, xf - 1, yf - 1)));
+            sampleNoise2D: function(x, z) {
+                const floorX = Math.floor(x) & 255;
+                const floorZ = Math.floor(z) & 255;
+                const localFractionX = x - Math.floor(x);
+                const localFractionZ = z - Math.floor(z);
+                const fadeX = this.fadeCurve(localFractionX);
+                const fadeZ = this.fadeCurve(localFractionZ);
+                
+                const indexAA = this.hashTable[this.hashTable[floorX] + floorZ];
+                const indexAB = this.hashTable[this.hashTable[floorX] + floorZ + 1];
+                const indexBA = this.hashTable[this.hashTable[floorX + 1] + floorZ];
+                const indexBB = this.hashTable[this.hashTable[floorX + 1] + floorZ + 1];
+                
+                return this.linearInterpolate(fadeZ, 
+                    this.linearInterpolate(fadeX, this.calculateGradientFactor(indexAA, localFractionX, localFractionZ), this.calculateGradientFactor(indexBA, localFractionX - 1, localFractionZ)),
+                    this.linearInterpolate(fadeX, this.calculateGradientFactor(indexAB, localFractionX, localFractionZ - 1), this.calculateGradientFactor(indexBB, localFractionX - 1, localFractionZ - 1))
+                );
             }
         };
-        MathNoiseEvaluator.init();
+        InternalProceduralNoiseGenerator.init();
 
         /**
-         * RUNTIME BOOTSTRAP INITIALIZATION ENGINE ENTRYPOINT
+         * MAIN RUNTIME SYSTEM ENGINE SETUP
          */
-        function bootstrapEngine() {
-            container = document.getElementById('canvas-container');
+        function entrypointBootloader() {
+            viewportContainer = document.getElementById('canvas-viewport');
             
-            // Setup scene properties
-            scene = new THREE.Scene();
-            scene.background = new THREE.Color(0x8cb1fc);
-            scene.fog = new THREE.FogExp2(0x8cb1fc, 0.025);
+            gameScene = new THREE.Scene();
+            gameScene.background = new THREE.Color(0x8cb1fc);
+            gameScene.fog = new THREE.FogExp2(0x8cb1fc, 0.03);
 
-            // Setup view matrix
-            camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 1000);
-            camera.position.set(8, 35, 8);
+            mainCamera = new THREE.PerspectiveCamera(65, window.innerWidth / window.innerHeight, 0.1, 300);
+            mainCamera.position.set(8, 20, 8);
 
-            // Core Lighting configuration
-            ambientLight = new THREE.AmbientLight(0xffffff, 0.45);
-            scene.add(ambientLight);
+            const environmentSunlight = new THREE.DirectionalLight(0xffffff, 0.7);
+            environmentSunlight.position.set(30, 60, 15);
+            gameScene.add(environmentSunlight);
+            gameScene.add(new THREE.AmbientLight(0xffffff, 0.45));
 
-            skyLight = new THREE.DirectionalLight(0xffffff, 0.6);
-            skyLight.position.set(40, 100, 20);
-            scene.add(skyLight);
+            // Low-RAM Performance WebGL Renderer Config
+            webglRenderer = new THREE.WebGLRenderer({ 
+                antialias: false, 
+                powerPreference: "high-performance",
+                precision: "lowp" 
+            });
+            webglRenderer.setSize(window.innerWidth, window.innerHeight);
+            webglRenderer.setPixelRatio(activeRenderDistanceSetting === 1 ? 0.75 : 1.0);
+            viewportContainer.appendChild(webglRenderer.domElement);
 
-            // Hardware Accelerated Renderer Instantiation
-            renderer = new THREE.WebGLRenderer({ antialias: false, powerPreference: "high-performance" });
-            renderer.setSize(window.innerWidth, window.innerHeight);
-            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-            container.appendChild(renderer.domElement);
-
-            // Control Handlers Hookup
-            controls = new THREE.PointerLockControls(camera, document.body);
+            navigationControls = new THREE.PointerLockControls(mainCamera, document.body);
             
-            // Event listeners for window blocker elements
-            document.getElementById('btn-start').addEventListener('click', () => {
-                if(!isInventoryOpen) controls.lock();
+            document.getElementById('btn-initialize-world').addEventListener('click', () => {
+                if (!isCreativeHubPanelOpen && !isSettingsPanelOpen) navigationControls.lock();
             });
             
-            controls.addEventListener('lock', () => {
-                document.getElementById('blocker-screen').style.display = 'none';
+            navigationControls.addEventListener('lock', () => {
+                document.getElementById('system-blocker-screen').style.display = 'none';
             });
-            
-            controls.addEventListener('unlock', () => {
-                if (!isInventoryOpen) {
-                    document.getElementById('blocker-screen').style.display = 'flex';
+            navigationControls.addEventListener('unlock', () => {
+                if (!isCreativeHubPanelOpen && !isSettingsPanelOpen) {
+                    document.getElementById('system-blocker-screen').style.display = 'flex';
                 }
             });
 
-            scene.add(controls.getObject());
+            gameScene.add(navigationControls.getObject());
 
-            // Bind Interface components
-            registerInputHandlers();
-            buildInterfaceComponents();
-            ParticleSystem.init();
+            registerSystemUIEvents();
+            registerSystemInputBindings();
+            renderEngineHotbarUI();
+            synchronizeActiveChunkMapStreaming();
 
-            // Run initial landscape validation sync loops
-            synchronizeDynamicEnvironment();
-
-            // Fire main rendering engine thread loop
-            window.addEventListener('resize', onWindowResizeStateChange);
-            document.getElementById('loading-text').style.display = 'none';
+            window.addEventListener('resize', executeViewportResizeHandler);
+            systemLastFpsTimestamp = performance.now();
             
-            lastFpsUpdate = performance.now();
-            animateEngineFrame();
+            executeMainEngineRenderLoopTick();
         }
 
         /**
-         * PROCEDURAL LANDSCAPE DATABASE MANAGER
+         * ADVANCED DATA ALLOCATION & WORLD STREAMING MANAGEMENT LOGIC
          */
-        function verifyWorldMapMatrixSegment(cx, cz) {
-            const segmentationId = `${cx},${cz}_allocated`;
-            if (worldStorage[segmentationId]) return; 
+        function executeProceduralDataGenerationPass(cx, cz) {
+            const chunkAllocationKeyFlag = `${cx},${cz}_populated`;
+            if (globalBlockMatrixData[chunkAllocationKeyFlag]) return;
 
-            const originX = cx * CONFIG.CHUNK_SIZE;
-            const originZ = cz * CONFIG.CHUNK_SIZE;
+            const baseWorldCoordX = cx * ENGINE_CONFIG.CHUNK_SIZE;
+            const baseWorldCoordZ = cz * ENGINE_CONFIG.CHUNK_SIZE;
 
-            for (let x = originX; x < originX + CONFIG.CHUNK_SIZE; x++) {
-                for (let z = originZ; z < originZ + CONFIG.CHUNK_SIZE; z++) {
+            for (let x = baseWorldCoordX; x < baseWorldCoordX + ENGINE_CONFIG.CHUNK_SIZE; x++) {
+                for (let z = baseWorldCoordZ; z < baseWorldCoordZ + ENGINE_CONFIG.CHUNK_SIZE; z++) {
                     
-                    // Generate layered terrain height coordinates using deterministic noise
-                    const macroStructure = MathNoiseEvaluator.evaluate2D(x * 0.015, z * 0.015) * 18;
-                    const microStructure = MathNoiseEvaluator.evaluate2D(x * 0.07, z * 0.07) * 4;
-                    const combinedY = Math.floor(macroStructure + microStructure + 24);
-                    const clampedSurfaceY = Math.max(2, Math.min(CONFIG.CHUNK_HEIGHT - 2, combinedY));
+                    const noiseLayer1 = InternalProceduralNoiseGenerator.sampleNoise2D(x * 0.02, z * 0.02) * 12;
+                    const noiseLayer2 = InternalProceduralNoiseGenerator.sampleNoise2D(x * 0.08, z * 0.08) * 3;
+                    const calculatedSurfaceHeight = Math.floor(noiseLayer1 + noiseLayer2 + 14);
+                    const safeClampedY = Math.max(1, Math.min(ENGINE_CONFIG.CHUNK_HEIGHT - 1, calculatedSurfaceHeight));
 
-                    // Structural baseline voxel storage processing
-                    for (let y = 0; y < CONFIG.CHUNK_HEIGHT; y++) {
-                        const cellKey = `${x},${y},${z}`;
+                    for (let y = 0; y < ENGINE_CONFIG.CHUNK_HEIGHT; y++) {
+                        const matrixMapKey = `${x},${y},${z}`;
                         
-                        if (y === 0) {
-                            worldStorage[cellKey] = 4; // Bedrock foundation floor layer
-                        } else if (y === clampedSurfaceY) {
-                            if (y < 13) {
-                                worldStorage[cellKey] = 7; // Sandy coastal beach banks
+                        if (y === safeClampedY) {
+                            if (y < 10) {
+                                globalBlockMatrixData[matrixMapKey] = 2; // Sand table basin
                             } else {
-                                worldStorage[cellKey] = 1; // Standard topsoil grass blanket
+                                globalBlockMatrixData[matrixMapKey] = 1; // Topsoil Grass layer
                             }
-                        } else if (y < clampedSurfaceY && y > clampedSurfaceY - 4) {
-                            worldStorage[cellKey] = 2; // Deep interior subsoil dirt structure
-                        } else if (y <= clampedSurfaceY - 4) {
-                            // Subterranean mineral generation matrices tracking checks
-                            if (Math.random() < 0.02) {
-                                worldStorage[cellKey] = 11; // Raw coal veins structures mapping
-                            } else {
-                                worldStorage[cellKey] = 3;  // Native structural hard stone profiles
-                            }
-                        } else if (y <= 12 && !worldStorage[cellKey]) {
-                            worldStorage[cellKey] = 8; // Liquid dynamic water level fill table limits
+                        } else if (y < safeClampedY && y > safeClampedY - 3) {
+                            globalBlockMatrixData[matrixMapKey] = 2; // Core Dirt base
+                        } else if (y <= safeClampedY - 3) {
+                            globalBlockMatrixData[matrixMapKey] = 3; // Bedrock Subsurface Hardstone
+                        } else if (y <= 9 && !globalBlockMatrixData[matrixMapKey]) {
+                            globalBlockMatrixData[matrixMapKey] = 8; // Fluid Water Level
                         }
                     }
 
-                    // Tree Structure Vegetation Spawning Check Rules
-                    if (x % 11 === 4 && z % 11 === 7 && Math.random() > 0.3) {
-                        const baseVegetationFloorY = clampedSurfaceY;
-                        if (baseVegetationFloorY > 13 && worldStorage[`${x},${baseVegetationFloorY},${z}`] === 1) {
-                            deployProceduralTreeStructure(x, baseVegetationFloorY + 1, z);
+                    // Procedural Foliage Structure Vector Allocation Passes
+                    if (x % 10 === 3 && z % 10 === 6 && Math.random() > 0.4) {
+                        const rootFloorHeightY = safeClampedY;
+                        if (rootFloorHeightY > 10 && globalBlockMatrixData[`${x},${rootFloorHeightY},${z}`] === 1) {
+                            allocateVoxelTreeStructureNode(x, rootFloorHeightY + 1, z);
                         }
                     }
                 }
             }
-            worldStorage[segmentationId] = true;
+            globalBlockMatrixData[chunkAllocationKeyFlag] = true;
         }
 
-        function deployProceduralTreeStructure(rootX, rootY, rootZ) {
-            const designHeight = 4 + Math.floor(Math.random() * 2);
-            // Stack trunk logs vertically
-            for (let h = 0; h < designHeight; h++) {
-                worldStorage[`${rootX},${rootY + h},${rootZ}`] = 5;
+        function allocateVoxelTreeStructureNode(rx, ry, rz) {
+            const trunkTargetHeight = 4;
+            for (let h = 0; h < trunkTargetHeight; h++) {
+                globalBlockMatrixData[`${rx},${ry + h},${rz}`] = 4;
             }
-            // Assemble dynamic leaf matrix canopy block bounds overlay
-            const capY = rootY + designHeight - 1;
+            const canopyTopCenterY = ry + trunkTargetHeight - 1;
             for (let ox = -2; ox <= 2; ox++) {
                 for (let oz = -2; oz <= 2; oz++) {
                     for (let oy = -1; oy <= 1; oy++) {
-                        const leafKey = `${rootX + ox},${capY + oy},${rootZ + oz}`;
-                        if (!worldStorage[leafKey]) {
-                            if (Math.abs(ox) === 2 && Math.abs(oz) === 2 && Math.random() < 0.5) continue;
-                            worldStorage[leafKey] = 6;
+                        const targetLeafKey = `${rx + ox},${canopyTopCenterY + oy},${rz + oz}`;
+                        if (!globalBlockMatrixData[targetLeafKey]) {
+                            if (Math.abs(ox) === 2 && Math.abs(oz) === 2 && Math.random() < 0.4) continue;
+                            globalBlockMatrixData[targetLeafKey] = 5;
                         }
                     }
                 }
@@ -571,263 +576,233 @@
         }
 
         /**
-         * CRITICAL PERFORMANCE UPGRADE: HIGHLY PACKED BUFFER GEOMETRY MERGER
-         * Fixed cube scaling issues using precise standard face assignments
+         * PERFORMANCE CRITICAL PASS: MEMORY ALLOCATED BUFFER GEOMETRY COMPILER
          */
-        function executeChunkGeometryMeshCompilation(cx, cz) {
-            const meshRegistryKey = `${cx},${cz}`;
+        function compileSingleChunkGeometryBufferMesh(cx, cz) {
+            const dynamicMeshKey = `${cx},${cz}`;
             
-            // Clean up existing memory pointers instantly before reallocation sequences
-            if (chunkMeshes[meshRegistryKey]) {
-                scene.remove(chunkMeshes[meshRegistryKey]);
-                chunkMeshes[meshRegistryKey].geometry.dispose();
-                delete chunkMeshes[meshRegistryKey];
+            if (globalChunkMeshNodeMap[dynamicMeshKey]) {
+                gameScene.remove(globalChunkMeshNodeMap[dynamicMeshKey]);
+                globalChunkMeshNodeMap[dynamicMeshKey].geometry.dispose();
+                delete globalChunkMeshNodeMap[dynamicMeshKey];
             }
 
-            verifyWorldMapMatrixSegment(cx, cz);
+            executeProceduralDataGenerationPass(cx, cz);
 
-            const positionVerticesBuffer = [];
-            const colorVerticesBuffer = [];
+            const rawPositionBufferArray = [];
+            const rawColorBufferArray = [];
             
-            const startX = cx * CONFIG.CHUNK_SIZE;
-            const startZ = cz * CONFIG.CHUNK_SIZE;
+            const startX = cx * ENGINE_CONFIG.CHUNK_SIZE;
+            const startZ = cz * ENGINE_CONFIG.CHUNK_SIZE;
 
-            // Geometry primitive layout mapping definitions
-            // Explicitly defining unique 3D cube data definitions ensures 1:1 perfect uniform boxes
-            const boxVerticesDefinitions = [
-                // Front Face
-                [-0.5, -0.5,  0.5], [ 0.5, -0.5,  0.5], [ 0.5,  0.5,  0.5],
-                [-0.5, -0.5,  0.5], [ 0.5,  0.5,  0.5], [-0.5,  0.5,  0.5],
-                // Back Face
-                [ 0.5, -0.5, -0.5], [-0.5, -0.5, -0.5], [-0.5,  0.5, -0.5],
-                [ 0.5, -0.5, -0.5], [-0.5,  0.5, -0.5], [ 0.5,  0.5, -0.5],
-                // Top Face
-                [-0.5,  0.5,  0.5], [ 0.5,  0.5,  0.5], [ 0.5,  0.5, -0.5],
-                [-0.5,  0.5,  0.5], [ 0.5,  0.5, -0.5], [-0.5,  0.5, -0.5],
-                // Bottom Face
-                [-0.5, -0.5, -0.5], [ 0.5, -0.5, -0.5], [ 0.5, -0.5,  0.5],
-                [-0.5, -0.5, -0.5], [ 0.5, -0.5,  0.5], [-0.5, -0.5,  0.5],
-                // Right Face
-                [ 0.5, -0.5,  0.5], [ 0.5, -0.5, -0.5], [ 0.5,  0.5, -0.5],
-                [ 0.5, -0.5,  0.5], [ 0.5,  0.5, -0.5], [ 0.5,  0.5,  0.5],
-                // Left Face
-                [-0.5, -0.5, -0.5], [-0.5, -0.5,  0.5], [-0.5,  0.5,  0.5],
-                [-0.5, -0.5, -0.5], [-0.5,  0.5,  0.5], [-0.5,  0.5, -0.5]
+            // Direct Face Construction Matrices to guarantee clean, unwarped 1:1 boxes
+            const standardFaceDefinitions = [
+                { dir: [0, 0, 1], verts: [[-0.5,-0.5, 0.5],[ 0.5,-0.5, 0.5],[ 0.5, 0.5, 0.5],[-0.5,-0.5, 0.5],[ 0.5, 0.5, 0.5],[-0.5, 0.5, 0.5]] },
+                { dir: [0, 0,-1], verts: [[ 0.5,-0.5,-0.5],[-0.5,-0.5,-0.5],[-0.5, 0.5,-0.5],[ 0.5,-0.5,-0.5],[-0.5, 0.5,-0.5],[ 0.5, 0.5,-0.5]] },
+                { dir: [0, 1, 0], verts: [[-0.5, 0.5, 0.5],[ 0.5, 0.5, 0.5],[ 0.5, 0.5,-0.5],[-0.5, 0.5, 0.5],[ 0.5, 0.5,-0.5],[-0.5, 0.5,-0.5]] },
+                { dir: [0,-1, 0], verts: [[-0.5,-0.5,-0.5],[ 0.5,-0.5,-0.5],[ 0.5,-0.5, 0.5],[-0.5,-0.5,-0.5],[ 0.5,-0.5, 0.5],[-0.5,-0.5, 0.5]] },
+                { dir: [1, 0, 0], verts: [[ 0.5,-0.5, 0.5],[ 0.5,-0.5,-0.5],[ 0.5, 0.5,-0.5],[ 0.5,-0.5, 0.5],[ 0.5, 0.5,-0.5],[ 0.5, 0.5, 0.5]] },
+                { dir: [-1, 0, 0], verts: [[-0.5,-0.5,-0.5],[-0.5,-0.5, 0.5],[-0.5, 0.5, 0.5],[-0.5,-0.5,-0.5],[-0.5, 0.5, 0.5],[-0.5, 0.5,-0.5]] }
             ];
 
-            for (let x = startX; x < startX + CONFIG.CHUNK_SIZE; x++) {
-                for (let z = startZ; z < startZ + CONFIG.CHUNK_SIZE; z++) {
-                    for (let y = 0; y < CONFIG.CHUNK_HEIGHT; y++) {
+            for (let x = startX; x < startX + ENGINE_CONFIG.CHUNK_SIZE; x++) {
+                for (let z = startZ; z < startZ + ENGINE_CONFIG.CHUNK_SIZE; z++) {
+                    for (let y = 0; y < ENGINE_CONFIG.CHUNK_HEIGHT; y++) {
                         
-                        const voxelId = worldStorage[`${x},${y},${z}`];
-                        if (!voxelId) continue;
+                        const currentBlockId = globalBlockMatrixData[`${x},${y},${z}`];
+                        if (!currentBlockId) continue;
 
-                        // Occlusion Checking Optimization Pass
-                        const faceOpaqueTop    = worldStorage[`${x},${y+1},${z}`];
-                        const faceOpaqueBottom = worldStorage[`${x},${y-1},${z}`];
-                        const faceOpaqueLeft   = worldStorage[`${x-1},${y},${z}`];
-                        const faceOpaqueRight  = worldStorage[`${x+1},${y},${z}`];
-                        const faceOpaqueFront  = worldStorage[`${x},${y},${z+1}`];
-                        const faceOpaqueBack   = worldStorage[`${x},${y},${z-1}`];
+                        const lookupBlockData = BlockSystemRegistry[currentBlockId];
+                        const convertedColorFormat = new THREE.Color(lookupBlockData.color);
 
-                        // Skip rendering this block if it is completely hidden from view by other solid blocks
-                        if (faceOpaqueTop && faceOpaqueBottom && faceOpaqueLeft && faceOpaqueRight && faceOpaqueFront && faceOpaqueBack) {
-                            // If any adjacent voxel is transparent (like water), we must still process this block
-                            if (!BlockRegistry[faceOpaqueTop].transparent && 
-                                !BlockRegistry[faceOpaqueBottom].transparent &&
-                                !BlockRegistry[faceOpaqueLeft].transparent &&
-                                !BlockRegistry[faceOpaqueRight].transparent &&
-                                !BlockRegistry[faceOpaqueFront].transparent &&
-                                !BlockRegistry[faceOpaqueBack].transparent) {
-                                continue;
+                        // High-Speed Loop Face Occlusion Culling Pass
+                        for (let f = 0; f < standardFaceDefinitions.length; f++) {
+                            const currentFace = standardFaceDefinitions[f];
+                            const neighborX = x + currentFace.dir[0];
+                            const neighborY = y + currentFace.dir[1];
+                            const neighborZ = z + currentFace.dir[2];
+                            
+                            const neighborBlockId = globalBlockMatrixData[`${neighborX},${neighborY},${neighborZ}`];
+
+                            // Dynamic Optimization Culling Logic Rule
+                            if (activeAggressiveCullingSetting && neighborBlockId) {
+                                if (BlockSystemRegistry[neighborBlockId].solid) {
+                                    continue; // Hide unexposed shared geometry coordinates to prevent hardware frame drops
+                                }
+                            }
+
+                            // Inject calculated safe vertex transformations into active drawing arrays
+                            for (let v = 0; v < currentFace.verts.length; v++) {
+                                const coordinateVector = currentFace.verts[v];
+                                rawPositionBufferArray.push(coordinateVector[0] + x, coordinateVector[1] + y, coordinateVector[2] + z);
+                                rawColorBufferArray.push(convertedColorFormat.r, convertedColorFormat.g, convertedColorFormat.b);
                             }
                         }
-
-                        const elementMetadata = BlockRegistry[voxelId];
-                        const elementColor = new THREE.Color(elementMetadata.color);
-
-                        // Inject vertex position parameters with 1:1 offsets
-                        for (let i = 0; i < boxVerticesDefinitions.length; i++) {
-                            const vDef = boxVerticesDefinitions[i];
-                            positionVerticesBuffer.push(vDef[0] + x, vDef[1] + y, vDef[2] + z);
-                            colorVerticesBuffer.push(elementColor.r, elementColor.g, elementColor.b);
-                        }
                     }
                 }
             }
 
-            if (positionVerticesBuffer.length === 0) return;
+            if (rawPositionBufferArray.length === 0) return;
 
-            // Bundle calculations arrays directly into hardware-accelerated buffers
-            const synthesizedBufferGeometry = new THREE.BufferGeometry();
-            synthesizedBufferGeometry.setAttribute('position', new THREE.Float32BufferAttribute(positionVerticesBuffer, 3));
-            synthesizedBufferGeometry.setAttribute('color', new THREE.Float32BufferAttribute(colorVerticesBuffer, 3));
-            synthesizedBufferGeometry.computeVertexNormals();
+            const compositeGeometryNode = new THREE.BufferGeometry();
+            compositeGeometryNode.setAttribute('position', new THREE.Float32BufferAttribute(rawPositionBufferArray, 3));
+            compositeGeometryNode.setAttribute('color', new THREE.Float32BufferAttribute(rawColorBufferArray, 3));
+            compositeGeometryNode.computeVertexNormals();
 
-            // Set up textureless lightning materials
-            const compiledMaterial = new THREE.MeshLambertMaterial({
-                vertexColors: true,
-                transparent: true,
-                opacity: 1.0
-            });
-
-            const processedChunkMesh = new THREE.Mesh(synthesizedBufferGeometry, compiledMaterial);
-            scene.add(processedChunkMesh);
-            chunkMeshes[meshRegistryKey] = processedChunkMesh;
-        }
-
-        function synchronizeDynamicEnvironment() {
-            const locationCoordinates = controls.getObject().position;
-            const currentActorChunkX = Math.floor(locationCoordinates.x / CONFIG.CHUNK_SIZE);
-            const currentActorChunkZ = Math.floor(locationCoordinates.z / CONFIG.CHUNK_SIZE);
-
-            const activeSceneRegistryKeys = new Set();
-
-            // Dynamic stream tracking generation range loop checks
-            for (let ox = -CONFIG.VIEW_DISTANCE; ox <= CONFIG.VIEW_DISTANCE; ox++) {
-                for (let oz = -CONFIG.VIEW_DISTANCE; oz <= CONFIG.VIEW_DISTANCE; oz++) {
-                    const targetChunkX = currentActorChunkX + ox;
-                    const targetChunkZ = currentActorChunkZ + oz;
-                    const compositeKey = `${targetChunkX},${targetChunkZ}`;
-
-                    activeSceneRegistryKeys.add(compositeKey);
-
-                    if (!chunkMeshes[compositeKey]) {
-                        executeChunkGeometryMeshCompilation(targetChunkX, targetChunkZ);
-                    }
-                }
-            }
-
-            // Memory Garbage collection sweep loop: clear invisible trailing memory references instantly
-            Object.keys(chunkMeshes).forEach(registeredKey => {
-                if (!activeSceneRegistryKeys.has(registeredKey)) {
-                    scene.remove(chunkMeshes[registeredKey]);
-                    chunkMeshes[registeredKey].geometry.dispose();
-                    delete chunkMeshes[registeredKey];
-                }
-            });
-
-            // Update user HUD parameters
-            document.getElementById('ui-chunk').innerText = `Current Chunk: [${currentActorChunkX}, ${currentActorChunkZ}]`;
-            document.getElementById('ui-blocks').innerText = `Active Blocks in Cache: ${Object.keys(worldStorage).length}`;
-        }
-
-        function triggerVoxelDataUpdateSequence(targetCoordX, targetCoordY, targetCoordZ, allocationVoxelId) {
-            const dataStorageKey = `${targetCoordX},${targetCoordY},${targetCoordZ}`;
+            const combinedMaterialNode = new THREE.MeshLambertMaterial({ vertexColors: true });
+            const completeChunkMesh = new THREE.Mesh(compositeGeometryNode, combinedMaterialNode);
             
-            if (allocationVoxelId === 0) {
-                delete worldStorage[dataStorageKey];
-            } else {
-                worldStorage[dataStorageKey] = allocationVoxelId;
+            gameScene.add(completeChunkMesh);
+            globalChunkMeshNodeMap[dynamicMeshKey] = completeChunkMesh;
+        }
+
+        function synchronizeActiveChunkMapStreaming() {
+            const currentActorCoordinates = navigationControls.getObject().position;
+            const currentComputedChunkX = Math.floor(currentActorCoordinates.x / ENGINE_CONFIG.CHUNK_SIZE);
+            const currentComputedChunkZ = Math.floor(currentActorCoordinates.z / ENGINE_CONFIG.CHUNK_SIZE);
+
+            const activeVisibleChunksTrackingSet = new Set();
+
+            for (let ox = -activeRenderDistanceSetting; ox <= activeRenderDistanceSetting; ox++) {
+                for (let oz = -activeRenderDistanceSetting; oz <= activeRenderDistanceSetting; oz++) {
+                    const targetChunkCoordX = currentComputedChunkX + ox;
+                    const targetChunkCoordZ = currentComputedChunkZ + oz;
+                    const compositeStringKey = `${targetChunkCoordX},${targetChunkCoordZ}`;
+
+                    activeVisibleChunksTrackingSet.add(compositeStringKey);
+
+                    if (!globalChunkMeshNodeMap[compositeStringKey]) {
+                        compileSingleChunkGeometryBufferMesh(targetChunkCoordX, targetChunkCoordZ);
+                    }
+                }
             }
 
-            const nativeChunkX = Math.floor(targetCoordX / CONFIG.CHUNK_SIZE);
-            const nativeChunkZ = Math.floor(targetCoordZ / CONFIG.CHUNK_SIZE);
+            // Cleanup routine loop: Unload trailing map sectors out of render range to free up memory
+            Object.keys(globalChunkMeshNodeMap).forEach(activeKey => {
+                if (!activeVisibleChunksTrackingSet.has(activeKey)) {
+                    gameScene.remove(globalChunkMeshNodeMap[activeKey]);
+                    globalChunkMeshNodeMap[activeKey].geometry.dispose();
+                    delete globalChunkMeshNodeMap[activeKey];
+                }
+            });
 
-            executeChunkGeometryMeshCompilation(nativeChunkX, nativeChunkZ);
+            document.getElementById('stat-chunk-id').innerText = `Chunk Vector: [${currentComputedChunkX}, ${currentComputedChunkZ}]`;
+            document.getElementById('stat-cached-blocks').innerText = `Allocated Cells: ${Object.keys(globalBlockMatrixData).length}`;
+        }
 
-            // Re-render chunk seam boundaries if block structures are updated right on the edges
-            if (targetCoordX % CONFIG.CHUNK_SIZE === 0) executeChunkGeometryMeshCompilation(nativeChunkX - 1, nativeChunkZ);
-            if (targetCoordX % CONFIG.CHUNK_SIZE === CONFIG.CHUNK_SIZE - 1) executeChunkGeometryMeshCompilation(nativeChunkX + 1, nativeChunkZ);
-            if (targetCoordZ % CONFIG.CHUNK_SIZE === 0) executeChunkGeometryMeshCompilation(nativeChunkX, nativeChunkZ - 1);
-            if (targetCoordZ % CONFIG.CHUNK_SIZE === CONFIG.CHUNK_SIZE - 1) executeChunkGeometryMeshCompilation(nativeChunkX, nativeChunkZ + 1);
+        function executeVoxelMatrixCellUpdate(worldPositionX, worldPositionY, worldPositionZ, targetVoxelBlockId) {
+            const trackingMatrixKey = `${worldPositionX},${worldPositionY},${worldPositionZ}`;
+            
+            if (targetVoxelBlockId === 0) {
+                delete globalBlockMatrixData[trackingMatrixKey];
+            } else {
+                globalBlockMatrixData[trackingMatrixKey] = targetVoxelBlockId;
+            }
+
+            const associatedChunkCoordX = Math.floor(worldPositionX / ENGINE_CONFIG.CHUNK_SIZE);
+            const associatedChunkCoordZ = Math.floor(worldPositionZ / ENGINE_CONFIG.CHUNK_SIZE);
+
+            compileSingleChunkGeometryBufferMesh(associatedChunkCoordX, associatedChunkCoordZ);
+
+            // Recompile chunk boundary seams if mutations happen along block edge frames
+            if (worldPositionX % ENGINE_CONFIG.CHUNK_SIZE === 0) compileSingleChunkGeometryBufferMesh(associatedChunkCoordX - 1, associatedChunkCoordZ);
+            if (worldPositionX % ENGINE_CONFIG.CHUNK_SIZE === ENGINE_CONFIG.CHUNK_SIZE - 1) compileSingleChunkGeometryBufferMesh(associatedChunkCoordX + 1, associatedChunkCoordZ);
+            if (worldPositionZ % ENGINE_CONFIG.CHUNK_SIZE === 0) compileSingleChunkGeometryBufferMesh(associatedChunkCoordX, associatedChunkCoordZ - 1);
+            if (worldPositionZ % ENGINE_CONFIG.CHUNK_SIZE === ENGINE_CONFIG.CHUNK_SIZE - 1) compileSingleChunkGeometryBufferMesh(associatedChunkCoordX, associatedChunkCoordZ + 1);
         }
 
         /**
-         * RAYCAST VOXEL INTERACTION ENGINE MODULE
+         * DYNAMIC INTERACTION CONTROLLER MODULE: EXACT BLOCK SELECTION RAYCASTER
          */
-        function fireInteractionRaycast(isDestructionSequence) {
-            if (!controls.isLocked || isInventoryOpen) return;
+        function fireVoxelTargetedRaycastSequence(isDestructiveAction) {
+            if (!navigationControls.isLocked || isCreativeHubPanelOpen || isSettingsPanelOpen) return;
 
-            const trackingRaycaster = new THREE.Raycaster();
-            trackingRaycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
+            const systemRaycasterNode = new THREE.Raycaster();
+            systemRaycasterNode.setFromCamera(new THREE.Vector2(0, 0), mainCamera);
 
-            let targetedVoxelCoordinates = null;
-            let currentEvaluationDistanceThreshold = 6.0; // Reach threshold limit parameters
+            let calculatedClosestInterceptTarget = null;
+            let interactiveReachThreshold = ENGINE_CONFIG.REACH_DISTANCE;
 
-            Object.keys(worldStorage).forEach(cellId => {
-                if (cellId.includes("_allocated")) return;
-                const extractionCoords = cellId.split(',').map(Number);
-                const evaluationVector = new THREE.Vector3(extractionCoords[0], extractionCoords[1], extractionCoords[2]);
-                const frameComputedDistance = camera.position.distanceTo(evaluationVector);
+            // Direct mathematical box intersection loop over close proximity blocks
+            Object.keys(globalBlockMatrixData).forEach(cellKey => {
+                if (cellKey.includes("_populated")) return;
+                const splitCoordinates = cellKey.split(',').map(Number);
+                const blockVectorPosition = new THREE.Vector3(splitCoordinates[0], splitCoordinates[1], splitCoordinates[2]);
+                const actualCalculatedDistance = mainCamera.position.distanceTo(blockVectorPosition);
 
-                if (frameComputedDistance < currentEvaluationDistanceThreshold) {
-                    const boundingInterceptionCheck = trackingRaycaster.intersectBox(new THREE.Box3(
-                        new THREE.Vector3(extractionCoords[0] - 0.5, extractionCoords[1] - 0.5, extractionCoords[2] - 0.5),
-                        new THREE.Vector3(extractionCoords[0] + 0.5, extractionCoords[1] + 0.5, extractionCoords[2] + 0.5)
+                if (actualCalculatedDistance < interactiveReachThreshold) {
+                    const structuralBoundingBoxCheck = systemRaycasterNode.intersectBox(new THREE.Box3(
+                        new THREE.Vector3(splitCoordinates[0] - 0.5, splitCoordinates[1] - 0.5, splitCoordinates[2] - 0.5),
+                        new THREE.Vector3(splitCoordinates[0] + 0.5, splitCoordinates[1] + 0.5, splitCoordinates[2] + 0.5)
                     ), new THREE.Vector3());
 
-                    if (boundingInterceptionCheck) {
-                        currentEvaluationDistanceThreshold = frameComputedDistance;
-                        targetedVoxelCoordinates = extractionCoords;
+                    if (structuralBoundingBoxCheck) {
+                        interactiveReachThreshold = actualCalculatedDistance;
+                        calculatedClosestInterceptTarget = { coords: splitCoordinates, point: structuralBoundingBoxCheck };
                     }
                 }
             });
 
-            if (targetedVoxelCoordinates) {
-                const targetX = targetedVoxelCoordinates[0];
-                const targetY = targetedVoxelCoordinates[1];
-                const targetZ = targetedVoxelCoordinates[2];
+            if (calculatedClosestInterceptTarget) {
+                const targetCoordinateX = calculatedClosestInterceptTarget.coords[0];
+                const targetCoordinateY = calculatedClosestInterceptTarget.coords[1];
+                const targetCoordinateZ = calculatedClosestInterceptTarget.coords[2];
 
-                if (isDestructionSequence) {
-                    const targetBlockId = worldStorage[`${targetX},${targetY},${targetZ}`];
-                    const targetHexColor = BlockRegistry[targetBlockId] ? BlockRegistry[targetBlockId].color : 0xffffff;
-                    
-                    ParticleSystem.spawn(targetX, targetY, targetZ, targetHexColor, 12);
-                    triggerVoxelDataUpdateSequence(targetX, targetY, targetZ, 0);
+                if (isDestructiveAction) {
+                    executeVoxelMatrixCellUpdate(targetCoordinateX, targetCoordinateY, targetCoordinateZ, 0);
                 } else {
-                    // Compute placement face mapping vectors
-                    const actorCamCoordinates = camera.position;
-                    let faceOffsetNormalX = 0, faceOffsetNormalY = 0, faceOffsetNormalZ = 0;
+                    // Compute exact target placement vector normal offsets based on camera viewing angles
+                    const cameraReferencePosition = mainCamera.position;
+                    let targetNormalOffsetX = 0, targetNormalOffsetY = 0, targetNormalOffsetZ = 0;
                     
-                    const distanceX = actorCamCoordinates.x - targetX;
-                    const distanceY = actorCamCoordinates.y - targetY;
-                    const distanceZ = actorCamCoordinates.z - targetZ;
+                    const deltaX = cameraReferencePosition.x - targetCoordinateX;
+                    const deltaY = cameraReferencePosition.y - targetCoordinateY;
+                    const deltaZ = cameraReferencePosition.z - targetCoordinateZ;
 
-                    if (Math.abs(distanceX) > Math.abs(distanceY) && Math.abs(distanceX) > Math.abs(distanceZ)) {
-                        faceOffsetNormalX = distanceX > 0 ? 1 : -1;
-                    } else if (Math.abs(distanceY) > Math.abs(distanceX) && Math.abs(distanceY) > Math.abs(distanceZ)) {
-                        faceOffsetNormalY = distanceY > 0 ? 1 : -1;
+                    if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > Math.abs(deltaZ)) {
+                        targetNormalOffsetX = deltaX > 0 ? 1 : -1;
+                    } else if (Math.abs(deltaY) > Math.abs(deltaX) && Math.abs(deltaY) > Math.abs(deltaZ)) {
+                        targetNormalOffsetY = deltaY > 0 ? 1 : -1;
                     } else {
-                        faceOffsetNormalZ = distanceZ > 0 ? 1 : -1;
+                        targetNormalOffsetZ = deltaZ > 0 ? 1 : -1;
                     }
 
-                    const placementTargetX = targetX + faceOffsetNormalX;
-                    const placementTargetY = targetY + faceOffsetNormalY;
-                    const placementTargetZ = targetZ + faceOffsetNormalZ;
+                    const placementTargetX = targetCoordinateX + targetNormalOffsetX;
+                    const placementTargetY = targetCoordinateY + targetNormalOffsetY;
+                    const placementTargetZ = targetCoordinateZ + targetNormalOffsetZ;
 
-                    // Actor bounding box protection checking check
-                    const currentActorPos = controls.getObject().position;
+                    // Actor body boundary crash protection check
+                    const currentActorPos = navigationControls.getObject().position;
                     if (Math.abs(placementTargetX - Math.round(currentActorPos.x)) < 1 && 
                         Math.abs(placementTargetZ - Math.round(currentActorPos.z)) < 1 && 
-                        (placementTargetY === Math.floor(currentActorPos.y) || placementTargetY === Math.floor(currentActorPos.y - CONFIG.PLAYER_HEIGHT))) {
-                        return; // Blocks overlap player bounding space bounds loop cancel
+                        (placementTargetY === Math.floor(currentActorPos.y) || placementTargetY === Math.floor(currentActorPos.y - ENGINE_CONFIG.PLAYER_HEIGHT))) {
+                        return; // Target overlaps with player body bounding boxes; cancel placement pass
                     }
 
-                    const activeSelectionBlockId = hotbarSlots[activeHotbarIndex];
-                    triggerVoxelDataUpdateSequence(placementTargetX, placementTargetY, placementTargetZ, activeSelectionBlockId);
+                    const activeSelectionBlockId = runtimeHotbarArray[currentHotbarSelectedIdx];
+                    executeVoxelMatrixCellUpdate(placementTargetX, placementTargetY, placementTargetZ, activeSelectionBlockId);
                 }
             }
         }
 
         /**
-         * PHYSICS VECTOR VALIDATION TRACKER MODULE
+         * PHYSICS CONSTRAINT BOUNDARY CHECK ENGINE
          */
-        function checkPhysicalCollisionState(predictedMovementVector) {
-            const minDetectionBoundsX = Math.floor(predictedMovementVector.x - CONFIG.PLAYER_RADIUS);
-            const maxDetectionBoundsX = Math.floor(predictedMovementVector.x + CONFIG.PLAYER_RADIUS);
-            const minDetectionBoundsZ = Math.floor(predictedMovementVector.z - CONFIG.PLAYER_RADIUS);
-            const maxDetectionBoundsZ = Math.floor(predictedMovementVector.z + CONFIG.PLAYER_RADIUS);
+        function checkSpatialCollisionState(predictedPositionVector) {
+            const boundsMinX = Math.floor(predictedPositionVector.x - ENGINE_CONFIG.PLAYER_RADIUS);
+            const boundsMaxX = Math.floor(predictedPositionVector.x + ENGINE_CONFIG.PLAYER_RADIUS);
+            const boundsMinZ = Math.floor(predictedPositionVector.z - ENGINE_CONFIG.PLAYER_RADIUS);
+            const boundsMaxZ = Math.floor(predictedPositionVector.z + ENGINE_CONFIG.PLAYER_RADIUS);
             
-            const minDetectionBoundsY = Math.floor(predictedMovementVector.y - CONFIG.PLAYER_HEIGHT);
-            const maxDetectionBoundsY = Math.floor(predictedMovementVector.y);
+            const boundsMinY = Math.floor(predictedPositionVector.y - ENGINE_CONFIG.PLAYER_HEIGHT);
+            const boundsMaxY = Math.floor(predictedPositionVector.y);
 
-            for (let x = minDetectionBoundsX; x <= maxDetectionBoundsX; x++) {
-                for (let y = minDetectionBoundsY; y <= maxDetectionBoundsY; y++) {
-                    for (let z = minDetectionBoundsZ; z <= maxDetectionBoundsZ; z++) {
-                        const cellLookupVoxelId = worldStorage[`${x},${y},${z}`];
-                        if (cellLookupVoxelId && BlockRegistry[cellLookupVoxelId].solid) {
-                            return true; // Overlap confirmed loop break
+            for (let x = boundsMinX; x <= boundsMaxX; x++) {
+                for (let y = boundsMinY; y <= boundsMaxY; y++) {
+                    for (let z = boundsMinZ; z <= boundsMaxZ; z++) {
+                        const targetBlockId = globalBlockMatrixData[`${x},${y},${z}`];
+                        if (targetBlockId && BlockSystemRegistry[targetBlockId].solid) {
+                            return true; // Dense overlapping verified
                         }
                     }
                 }
@@ -836,245 +811,261 @@
         }
 
         /**
-         * CLIENT CONTROLS INPUT BINDINGS ENGINE
-         * FIXED: A moves left, D moves right
+         * CONTROL INPUT KEYBOARD AND USER INTERFACE OVERLAY EVENT HANDLING INTERFACES
          */
-        function registerInputHandlers() {
+        function registerSystemInputBindings() {
             document.addEventListener('keydown', (e) => {
                 if (e.code === 'KeyE') {
-                    toggleInventoryCatalogMenuOverlay();
+                    toggleCreativeInventoryPanelOverlay();
+                    e.preventDefault();
+                    return;
+                }
+                if (e.code === 'KeyO') {
+                    toggleSystemSettingsPanelOverlay();
                     e.preventDefault();
                     return;
                 }
 
-                if (isInventoryOpen) return;
+                if (isCreativeHubPanelOpen || isSettingsPanelOpen) return;
 
                 switch (e.code) {
-                    case 'KeyW': moveForward = true; break;
-                    case 'KeyS': moveBackward = true; break;
-                    case 'KeyA': moveLeft = true; break;  // Left movement mapping fixed
-                    case 'KeyD': moveRight = true; break; // Right movement mapping fixed
+                    case 'KeyW': inputStateForward = true; break;
+                    case 'KeyS': inputStateBackward = true; break;
+                    case 'KeyA': inputStateLeft = true; break;  // Fixed map left movement mapping
+                    case 'KeyD': inputStateRight = true; break; // Fixed map right movement mapping
                     case 'Space': 
-                        if (playerOnGround) {
-                            currentVelocity.y = CONFIG.JUMP_FORCE;
-                            playerOnGround = false;
+                        if (actorStateIsOnGround) {
+                            actorMovementVelocity.y = ENGINE_CONFIG.JUMP_IMPULSE;
+                            actorStateIsOnGround = false;
                         }
                         break;
-                    case 'Digit1': activeHotbarIndex = 0; buildInterfaceComponents(); break;
-                    case 'Digit2': activeHotbarIndex = 1; buildInterfaceComponents(); break;
-                    case 'Digit3': activeHotbarIndex = 2; buildInterfaceComponents(); break;
-                    case 'Digit4': activeHotbarIndex = 3; buildInterfaceComponents(); break;
-                    case 'Digit5': activeHotbarIndex = 4; buildInterfaceComponents(); break;
+                    case 'Digit1': currentHotbarSelectedIdx = 0; renderEngineHotbarUI(); break;
+                    case 'Digit2': currentHotbarSelectedIdx = 1; renderEngineHotbarUI(); break;
+                    case 'Digit3': currentHotbarSelectedIdx = 2; renderEngineHotbarUI(); break;
+                    case 'Digit4': currentHotbarSelectedIdx = 3; renderEngineHotbarUI(); break;
+                    case 'Digit5': currentHotbarSelectedIdx = 4; renderEngineHotbarUI(); break;
                 }
             });
 
             document.addEventListener('keyup', (e) => {
                 switch (e.code) {
-                    case 'KeyW': moveForward = false; break;
-                    case 'KeyS': moveBackward = false; break;
-                    case 'KeyA': moveLeft = false; break;  // Left navigation release fixed
-                    case 'KeyD': moveRight = false; break; // Right navigation release fixed
+                    case 'KeyW': inputStateForward = false; break;
+                    case 'KeyS': inputStateBackward = false; break;
+                    case 'KeyA': inputStateLeft = false; break;  // Fixed map left release mapping
+                    case 'KeyD': inputStateRight = false; break; // Fixed map right release mapping
                 }
             });
 
             document.addEventListener('mousedown', (e) => {
-                if (isInventoryOpen || !controls.isLocked) return;
-                if (e.button === 0) fireInteractionRaycast(true);  // Left mouse destruction loop execution pass
-                if (e.button === 2) fireInteractionRaycast(false); // Right click build triggers pass
+                if (isCreativeHubPanelOpen || isSettingsPanelOpen || !navigationControls.isLocked) return;
+                if (e.button === 0) fireVoxelTargetedRaycastSequence(true);  // Destruct block target index
+                if (e.button === 2) fireVoxelTargetedRaycastSequence(false); // Build block target index
             });
             
-            // Suppress contextual menu items window overlays inside simulation viewport loops
-            document.addEventListener('contextmenu', e => e.preventDefault());
+            document.addEventListener('contextmenu', event => event.preventDefault());
         }
 
-        /**
-         * USER UI LAYER DOM BUILD MANIPULATOR MODULES
-         */
-        function buildInterfaceComponents() {
-            const slotsContainer = document.getElementById('hotbar-slots-wrapper') || document.getElementById('hotbar-container');
-            slotsContainer.innerHTML = '';
+        function registerSystemUIEvents() {
+            // Close Action Trigger Buttons bindings setup
+            document.getElementById('btn-close-hub').onclick = toggleCreativeInventoryPanelOverlay;
+            document.getElementById('btn-close-settings').onclick = toggleSystemSettingsPanelOverlay;
 
-            hotbarSlots.forEach((blockId, idx) => {
-                const elementSlotCard = document.createElement('div');
-                elementSlotCard.className = `hotbar-slot ${idx === activeHotbarIndex ? 'active' : ''}`;
+            // Select configuration mutations changes event bindings registers
+            document.getElementById('setting-render-distance').onchange = function(e) {
+                activeRenderDistanceSetting = parseInt(e.target.value);
+                synchronizeActiveChunkMapStreaming();
+            };
+
+            document.getElementById('setting-culling-mode').onchange = function(e) {
+                activeAggressiveCullingSetting = (e.target.value === 'aggressive');
+                // Force a rebuild across all active chunk mesh segments to instantly update optimizations
+                Object.keys(globalChunkMeshNodeMap).forEach(key => {
+                    const parts = key.split(',').map(Number);
+                    compileSingleChunkGeometryBufferMesh(parts[0], parts[1]);
+                });
+                document.getElementById('stat-mode').innerText = activeAggressiveCullingSetting ? "Render Mode: Aggressive Occlusion" : "Render Mode: Standard Buffer";
+            };
+
+            document.getElementById('setting-res-scale').onchange = function(e) {
+                const scaleValue = parseFloat(e.target.value);
+                webglRenderer.setPixelRatio(scaleValue);
+                executeViewportResizeHandler();
+            };
+        }
+
+        function renderEngineHotbarUI() {
+            const hotbarDOMContainer = document.getElementById('hotbar-wrapper');
+            hotbarDOMContainer.innerHTML = '';
+
+            runtimeHotbarArray.forEach((blockId, index) => {
+                const slotNodeElement = document.createElement('div');
+                slotNodeElement.className = `hotbar-slot-node ${index === currentHotbarSelectedIdx ? 'active-slot' : ''}`;
                 
-                const elementSlotPreview = document.createElement('div');
-                elementSlotPreview.className = 'slot-preview';
-                elementSlotPreview.style.backgroundColor = '#' + BlockRegistry[blockId].color.toString(16);
+                const previewElementNode = document.createElement('div');
+                previewElementNode.className = 'node-preview';
+                previewElementNode.style.backgroundColor = '#' + BlockSystemRegistry[blockId].color.toString(16);
 
-                const elementSlotIndexNumber = document.createElement('div');
-                elementSlotIndexNumber.className = 'slot-number';
-                elementSlotIndexNumber.innerText = idx + 1;
+                const slotIndexLabelNode = document.createElement('div');
+                slotIndexLabelNode.className = 'node-index';
+                slotIndexLabelNode.innerText = index + 1;
 
-                elementSlotCard.appendChild(elementSlotIndexNumber);
-                elementSlotCard.appendChild(elementSlotPreview);
-                slotsContainer.appendChild(elementSlotCard);
+                slotNodeElement.appendChild(slotIndexLabelNode);
+                slotNodeElement.appendChild(previewElementNode);
+                hotbarDOMContainer.appendChild(slotNodeElement);
             });
         }
 
         function buildCreativeInventoryCatalogDOMGrid() {
-            const gridContainer = document.getElementById('registry-grid');
-            gridContainer.innerHTML = '';
+            const gridDOMWrapper = document.getElementById('catalog-dom-grid');
+            gridDOMWrapper.innerHTML = '';
 
-            Object.keys(BlockRegistry).forEach(idString => {
-                const parsedId = Number(idString);
-                const dataset = BlockRegistry[parsedId];
+            Object.keys(BlockSystemRegistry).forEach(registryStringId => {
+                const targetKeyId = Number(registryStringId);
+                const metadataRecord = BlockSystemRegistry[targetKeyId];
 
-                const cardItem = document.createElement('div');
-                cardItem.className = 'inventory-item-card';
+                const cardElementNode = document.createElement('div');
+                cardElementNode.className = 'catalog-item-card';
 
-                const previewColorBox = document.createElement('div');
-                previewColorBox.className = 'slot-preview';
-                previewColorBox.style.backgroundColor = '#' + dataset.color.toString(16);
+                const colorBoxPreviewNode = document.createElement('div');
+                colorBoxPreviewNode.className = 'node-preview';
+                colorBoxPreviewNode.style.backgroundColor = '#' + metadataRecord.color.toString(16);
 
-                const labelTitle = document.createElement('div');
-                labelTitle.className = 'item-label';
-                labelTitle.innerText = dataset.name;
+                const labelTitleNode = document.createElement('div');
+                labelTitleNode.className = 'card-label';
+                labelTitleNode.innerText = metadataRecord.name;
 
-                cardItem.appendChild(previewColorBox);
-                cardItem.appendChild(labelTitle);
+                cardElementNode.appendChild(colorBoxPreviewNode);
+                cardElementNode.appendChild(labelTitleNode);
 
-                cardItem.onclick = () => {
-                    hotbarSlots[activeHotbarIndex] = parsedId;
-                    buildInterfaceComponents();
-                    toggleInventoryCatalogMenuOverlay();
+                cardElementNode.onclick = () => {
+                    runtimeHotbarArray[currentHotbarSelectedIdx] = targetKeyId;
+                    renderEngineHotbarUI();
+                    toggleCreativeInventoryPanelOverlay();
                 };
 
-                gridContainer.appendChild(cardItem);
+                gridDOMWrapper.appendChild(cardElementNode);
             });
         }
 
-        function toggleInventoryCatalogMenuOverlay() {
-            isInventoryOpen = !isInventoryOpen;
-            const elementUIOverlay = document.getElementById('creative-inventory-overlay');
+        function toggleCreativeInventoryPanelOverlay() {
+            if (isSettingsPanelOpen) return;
+            isCreativeHubPanelOpen = !isCreativeHubPanelOpen;
+            const targetOverlayDOM = document.getElementById('creative-hub-overlay');
             
-            if (isInventoryOpen) {
+            if (isCreativeHubPanelOpen) {
                 buildCreativeInventoryCatalogDOMGrid();
-                elementUIOverlay.style.display = 'flex';
-                controls.unlock();
-                
-                moveForward = moveBackward = moveLeft = moveRight = false;
+                targetOverlayDOM.style.display = 'flex';
+                navigationControls.unlock();
+                inputStateForward = inputStateBackward = inputStateLeft = inputStateRight = false;
             } else {
-                elementUIOverlay.style.display = 'none';
-                controls.lock();
+                targetOverlayDOM.style.display = 'none';
+                navigationControls.lock();
             }
         }
 
-        function onWindowResizeStateChange() {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
+        function toggleSystemSettingsPanelOverlay() {
+            if (isCreativeHubPanelOpen) return;
+            isSettingsPanelOpen = !isSettingsPanelOpen;
+            const targetSettingsDOM = document.getElementById('settings-menu-overlay');
+            
+            if (isSettingsPanelOpen) {
+                targetSettingsDOM.style.display = 'flex';
+                navigationControls.unlock();
+                inputStateForward = inputStateBackward = inputStateLeft = inputStateRight = false;
+            } else {
+                targetSettingsDOM.style.display = 'none';
+                navigationControls.lock();
+            }
+        }
+
+        function executeViewportResizeHandler() {
+            mainCamera.aspect = window.innerWidth / window.innerHeight;
+            mainCamera.updateProjectionMatrix();
+            webglRenderer.setSize(window.innerWidth, window.innerHeight);
         }
 
         /**
-         * CORE REALTIME RENDERING ENGINE FRAME TICK LOOP ROUTINE
+         * CORE PERFORMANCE GRAPHICS RENDERING RUNTIME MAIN LOOP TICK ROUTINE
          */
-        function animateEngineFrame() {
-            requestAnimationFrame(animateEngineFrame);
+        function executeMainEngineRenderLoopTick() {
+            requestAnimationFrame(executeMainEngineRenderLoopTick);
 
-            const frameDeltaTimeSeconds = Math.min(deltaClock.getDelta(), 0.1);
+            const executionDeltaTime = Math.min(systemClock.getDelta(), 0.08);
 
-            // Compute running framerate stats metrics updates parameters frames
-            fpsCounter++;
-            const timestampNow = performance.now();
-            if (timestampNow >= lastFpsUpdate + 1000) {
-                document.getElementById('ui-fps').innerText = `FPS: ${fpsCounter}`;
-                fpsCounter = 0;
-                lastFpsUpdate = timestampNow;
+            // Compute diagnostic rolling Framerate monitoring updates parameters metrics frames
+            systemFramesCounter++;
+            const currentMetricTimestamp = performance.now();
+            if (currentMetricTimestamp >= systemLastFpsTimestamp + 1000) {
+                document.getElementById('stat-fps').innerText = `FPS: ${systemFramesCounter}`;
+                systemFramesCounter = 0;
+                systemLastFpsTimestamp = currentMetricTimestamp;
             }
 
-            // Manage running day-night ambient lighting rotation matrix math formulas calculations
-            environmentTime += (frameDeltaTimeSeconds * 0.004);
-            if (environmentTime > 1.0) environmentTime = 0.0;
-            
-            const solarAngleRadianAngle = environmentTime * Math.PI * 2;
-            skyLight.position.x = Math.cos(solarAngleRadianAngle) * 100;
-            skyLight.position.y = Math.sin(solarAngleRadianAngle) * 100;
-            
-            // Adjust sky colors and light brightness dynamically based on solar angles
-            if (skyLight.position.y < 0) {
-                skyLight.intensity = 0.0;
-                ambientLight.intensity = 0.15; // Dim night lighting pass
-                scene.background.setHex(0x0a0f26);
-                scene.fog.color.setHex(0x0a0f26);
-            } else {
-                skyLight.intensity = Math.min(skyLight.position.y / 40, 0.7);
-                ambientLight.intensity = 0.4 + (skyLight.intensity * 0.2);
-                scene.background.setHex(0x8cb1fc);
-                scene.fog.color.setHex(0x8cb1fc);
-            }
+            if (navigationControls.isLocked && !isCreativeHubPanelOpen && !isSettingsPanelOpen) {
+                // Apply constant downward gravity translation vectors checks
+                actorMovementVelocity.y -= ENGINE_CONFIG.GRAVITY * executionDeltaTime;
+                if (actorMovementVelocity.y < -ENGINE_CONFIG.MAX_FALL_SPEED) actorMovementVelocity.y = -ENGINE_CONFIG.MAX_FALL_SPEED;
 
-            const activeHour = Math.floor(environmentTime * 24);
-            const activeMinute = Math.floor((environmentTime * 24 - activeHour) * 60);
-            document.getElementById('ui-time').innerText = `Time of Day: ${activeHour.toString().padStart(2,'0')}:${activeMinute.toString().padStart(2,'0')}`;
+                // Process input flags conversion state transforms matrices vectors
+                const translationMovementZ = Number(inputStateForward) - Number(inputStateBackward);
+                const translationMovementX = Number(inputStateRight) - Number(inputStateLeft);
 
-            ParticleSystem.update(frameDeltaTimeSeconds);
+                const currentCamDirectionLookVector = new THREE.Vector3();
+                mainCamera.getWorldDirection(currentCamDirectionLookVector);
+                currentCamDirectionLookVector.y = 0;
+                currentCamDirectionLookVector.normalize();
 
-            if (controls.isLocked && !isInventoryOpen) {
-                // Apply constant gravity formulas variables forces acceleration curves bounds constraints
-                currentVelocity.y -= CONFIG.GRAVITY * frameDeltaTimeSeconds;
-                if (currentVelocity.y < -CONFIG.TERMINAL_VELOCITY) currentVelocity.y = -CONFIG.TERMINAL_VELOCITY;
+                const horizontalRightAxisVector = new THREE.Vector3();
+                horizontalRightAxisVector.crossVectors(currentCamDirectionLookVector, mainCamera.up).normalize();
 
-                // Process input flags conversion states loops metrics checks vectors
-                const movementDirectionVectorZ = Number(moveForward) - Number(moveBackward);
-                const movementDirectionVectorX = Number(moveRight) - Number(moveLeft);
+                const runtimeTranslationStepVector = new THREE.Vector3();
+                runtimeTranslationStepVector.addScaledVector(currentCamDirectionLookVector, translationMovementZ);
+                runtimeTranslationStepVector.addScaledVector(horizontalRightAxisVector, translationMovementX);
+                runtimeTranslationStepVector.normalize().multiplyScalar(ENGINE_CONFIG.WALK_VELOCITY * executionDeltaTime);
 
-                const lookDirectionVector = new THREE.Vector3();
-                camera.getWorldDirection(lookDirectionVector);
-                lookDirectionVector.y = 0;
-                lookDirectionVector.normalize();
+                const actorTransformTargetObject = navigationControls.getObject();
 
-                const transformAxisRightVector = new THREE.Vector3();
-                transformAxisRightVector.crossVectors(lookDirectionVector, camera.up).normalize();
-
-                const translationStepVector = new THREE.Vector3();
-                translationStepVector.addScaledVector(lookDirectionVector, movementDirectionVectorZ);
-                translationStepVector.addScaledVector(transformAxisRightVector, movementDirectionVectorX);
-                translationStepVector.normalize().multiplyScalar(CONFIG.WALK_SPEED * frameDeltaTimeSeconds);
-
-                const playerActorTransformObject = controls.getObject();
-
-                // Axis Separated Movement Checking Loop Matrix Passes
-                // 1. Resolve X Translation step constraints safely
-                playerActorTransformObject.position.x += translationStepVector.x;
-                if (checkPhysicalCollisionState(playerActorTransformObject.position)) {
-                    playerActorTransformObject.position.x -= translationStepVector.x;
+                // Axis Separated Translation Verification Engine Loops Pass
+                // 1. Resolve X coordinate stepping transforms constraints
+                actorTransformTargetObject.position.x += runtimeTranslationStepVector.x;
+                if (checkSpatialCollisionState(actorTransformTargetObject.position)) {
+                    actorTransformTargetObject.position.x -= runtimeTranslationStepVector.x;
                 }
 
-                // 2. Resolve Z Translation step constraints safely
-                playerActorTransformObject.position.z += translationStepVector.z;
-                if (checkPhysicalCollisionState(playerActorTransformObject.position)) {
-                    playerActorTransformObject.position.z -= translationStepVector.z;
+                // 2. Resolve Z coordinate stepping transforms constraints
+                actorTransformTargetObject.position.z += runtimeTranslationStepVector.z;
+                if (checkSpatialCollisionState(actorTransformTargetObject.position)) {
+                    actorTransformTargetObject.position.z -= runtimeTranslationStepVector.z;
                 }
 
-                // 3. Resolve Vertical Gravity step constraints safely
-                playerActorTransformObject.position.y += currentVelocity.y * frameDeltaTimeSeconds;
-                if (checkPhysicalCollisionState(playerActorTransformObject.position)) {
-                    if (currentVelocity.y < 0) {
-                        playerOnGround = true; // Hard ground base boundary hit confirmed reset state flag parameters
+                // 3. Resolve Vertical Gravity stepping acceleration constraints
+                actorTransformTargetObject.position.y += actorMovementVelocity.y * executionDeltaTime;
+                if (checkSpatialCollisionState(actorTransformTargetObject.position)) {
+                    if (actorMovementVelocity.y < 0) {
+                        actorStateIsOnGround = true; // Actor has safe contact surface under feet boundary flag reset
                     }
-                    playerActorTransformObject.position.y -= currentVelocity.y * frameDeltaTimeSeconds;
-                    currentVelocity.y = 0;
+                    actorTransformTargetObject.position.y -= actorMovementVelocity.y * executionDeltaTime;
+                    actorMovementVelocity.y = 0;
                 }
 
-                // Void reset failsafe fallback protocol bounds check bounds
-                if (playerActorTransformObject.position.y < -40) {
-                    playerActorTransformObject.position.set(8, 40, 8);
-                    currentVelocity.y = 0;
+                // Fall out of environment boundary fail-safe recovery protocol check
+                if (actorTransformTargetObject.position.y < -30) {
+                    actorTransformTargetObject.position.set(8, 25, 8);
+                    actorMovementVelocity.y = 0;
                 }
 
-                // Synchronize active streaming chunk buffers matrices allocations shifts
-                synchronizeDynamicEnvironment();
+                // Update dynamic streaming sectors maps coordinates
+                synchronizeActiveChunkMapStreaming();
 
-                // Stream current tracking position logs metrics parameters directly onto UI DOM trees targets
-                document.getElementById('ui-coords').innerText = `XYZ: ${playerActorTransformObject.position.x.toFixed(2)} / ${playerActorTransformObject.position.y.toFixed(2)} / ${playerActorTransformObject.position.z.toFixed(2)}`;
+                // Inject accurate system translation positions data metrics back into DOM layout dashboard tree nodes
+                document.getElementById('stat-xyz').innerText = `XYZ: ${actorTransformTargetObject.position.x.toFixed(2)} / ${actorTransformTargetObject.position.y.toFixed(2)} / ${actorTransformTargetObject.position.z.toFixed(2)}`;
             }
 
-            renderer.render(scene, camera);
+            webglRenderer.render(gameScene, mainCamera);
         }
 
-        // Trigger startup process
-        window.onload = bootstrapEngine;
+        // Initialize engine bootstrap on load completion validation passes
+        window.onload = entrypointBootloader;
     </script>
 </body>
 </html>
