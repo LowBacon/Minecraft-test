@@ -3,430 +3,428 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>JS Voxel Craft Pro</title>
+    <title>Super Optimized Web Voxel Craft</title>
     <style>
         body {
-            margin: 0;
-            padding: 0;
-            overflow: hidden;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            user-select: none;
+            margin: 0; padding: 0; overflow: hidden;
+            font-family: 'Courier New', Courier, monospace; user-select: none;
         }
         #crosshair {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            width: 10px;
-            height: 10px;
-            transform: translate(-50%, -50%);
-            color: white;
-            font-weight: bold;
-            font-size: 20px;
-            pointer-events: none;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            position: absolute; top: 50%; left: 50%;
+            width: 10px; height: 10px; transform: translate(-50%, -50%);
+            color: white; font-weight: bold; font-size: 24px;
+            pointer-events: none; z-index: 5;
         }
-        #ui-container {
-            position: absolute;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(0, 0, 0, 0.6);
-            padding: 10px;
-            border-radius: 5px;
-            display: flex;
-            gap: 10px;
-            pointer-events: none;
+        #hud {
+            position: absolute; top: 10px; left: 10px;
+            color: #00ff00; background: rgba(0,0,0,0.7);
+            padding: 10px; font-size: 12px; border-radius: 3px; pointer-events: none;
         }
-        .hotbar-slot {
-            width: 50px;
-            height: 50px;
-            border: 2px solid #555;
-            background: #222;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-weight: bold;
-            font-size: 11px;
-            position: relative;
+        /* UI Hotbar & Inventory */
+        #hotbar {
+            position: absolute; bottom: 20px; left: 50%;
+            transform: translateX(-50%); background: rgba(30, 30, 30, 0.85);
+            padding: 6px; border-radius: 4px; display: flex; gap: 6px;
+            border: 2px solid #555; pointer-events: auto;
         }
-        .hotbar-slot.active {
-            border-color: #fff;
-            box-shadow: 0 0 10px #fff;
+        .slot {
+            width: 46px; height: 46px; border: 3px solid #3a3a3a;
+            background: #8b8b8b; display: flex; align-items: center;
+            justify-content: center; color: white; font-size: 10px;
+            font-weight: bold; text-align: center; cursor: pointer;
         }
-        #block-label {
-            position: absolute;
-            bottom: 95px;
-            left: 50%;
-            transform: translateX(-50%);
-            color: white;
-            background: rgba(0,0,0,0.7);
-            padding: 5px 15px;
-            border-radius: 3px;
-            font-size: 14px;
-            pointer-events: none;
+        .slot.active { border-color: #ffffff; box-shadow: 0 0 8px #fff; }
+        
+        /* Creative Inventory Menu */
+        #creative-hub {
+            position: absolute; top: 50%; left: 50%;
+            transform: translate(-50%, -50%); width: 340px; height: 240px;
+            background: rgba(40, 40, 40, 0.95); border: 3px solid #666;
+            padding: 15px; display: none; flex-wrap: wrap; gap: 8px;
+            overflow-y: auto; border-radius: 6px; z-index: 20;
         }
-        #mining-progress-container {
-            position: absolute;
-            top: 55%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 80px;
-            height: 6px;
-            background: rgba(0,0,0,0.5);
-            border: 1px solid #fff;
-            display: none;
-            pointer-events: none;
-        }
-        #mining-bar {
-            width: 0%;
-            height: 100%;
-            background: #ffcc00;
-        }
-        #instructions {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            color: white;
-            background: rgba(0,0,0,0.6);
-            padding: 15px;
-            border-radius: 5px;
-            pointer-events: none;
-            font-size: 13px;
-            line-height: 1.5;
-        }
+        .hub-title { width: 100%; color: #fff; margin-bottom: 5px; font-size: 14px; text-transform: uppercase;}
+        
         #blocker {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0,0,0,0.8);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            color: white;
-            cursor: pointer;
-            text-align: center;
-            z-index: 10;
-        }
-        #instructions-screen {
-            font-size: 20px;
+            position: absolute; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.75); display: flex;
+            justify-content: center; align-items: center;
+            color: white; cursor: pointer; text-align: center; z-index: 30;
         }
     </style>
 </head>
 <body>
     <div id="blocker">
-        <div id="instructions-screen">
-            <strong>Click to Play</strong><br><br>
-            W, A, S, D = Move | SPACE = Jump<br>
-            MOUSE = Look Around<br>
-            HOLD LEFT CLICK = Mine Block (Takes time!)<br>
-            RIGHT CLICK = Place Block<br>
-            1 - 5 = Select Material
+        <div>
+            <h1 style="margin:0 0 10px 0;">VoxelCraft Lite</h1>
+            <p>Optimized for Low-End Laptops</p>
+            <strong style="color:#ffcc00;">CLICK TO PLAY</strong><br><br>
+            Move: WASD | Jump: SPACE<br>
+            Mine: Hold Left Click | Place: Right Click<br>
+            Inventory Hub: Press [ E ]
         </div>
     </div>
 
     <div id="crosshair">+</div>
-    <div id="mining-progress-container"><div id="mining-bar"></div></div>
+    <div id="hud">FPS/RAM Optimized Engine<br>Chunk Buffers: Active<br>Press E for Creative Hub</div>
     
-    <div id="instructions">
-        <strong>Controls:</strong> WASD (Move) | Space (Jump)<br>
-        Hold Left Click (Mine) | Right Click (Place)<br>
-        1-5 (Switch Block)
+    <div id="creative-hub">
+        <div class="hub-title">Creative Inventory (Click to Equip)</div>
     </div>
-    <div id="block-label">Grass Block</div>
-    
-    <div id="ui-container">
-        <div class="hotbar-slot active" style="background-color: #557a2b;">Grass</div>
-        <div class="hotbar-slot" style="background-color: #866043;">Dirt</div>
-        <div class="hotbar-slot" style="background-color: #737373;">Stone</div>
-        <div class="hotbar-slot" style="background-color: #a07f59;">Wood</div>
-        <div class="hotbar-slot" style="background-color: #eef9f9; color: #333;">Glass</div>
-    </div>
+
+    <div id="hotbar"></div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/PointerLockControls.js"></script>
 
     <script>
-        // --- Game Setup & Settings ---
-        const BLOCK_SIZE = 1;
-        const WORLD_SIZE = 40; // Size of map grid
-        const PLAYER_RADIUS = 0.35; // Size of player box for sliding wall collisions
+        // --- Core Engine Configuration ---
+        const CHUNK_SIZE = 16;
+        const WORLD_CHUNKS_AXIS = 3; // 3x3 Chunks surrounding player safely
+        const PLAYER_RADIUS = 0.3;
         const PLAYER_HEIGHT = 1.6;
 
         let scene, camera, renderer, controls;
-        let blocksWorld = {}; 
-        let activeBlockType = 1;
+        let chunks = {}; // Stores combined mesh data mapping
+        let worldData = {}; // Raw numerical block matrix layout data: "x,y,z" => blockType
         
-        // Input Controls
-        let moveForward = false, moveBackward = false, moveLeft = false, moveRight = false;
-        let isMining = false;
-        let canJump = false;
-        
+        // Block Registry Definitions (Using standard matching colors)
+        const blockRegistry = {
+            1: { name: "Grass", color: 0x5c8e32, solid: true },
+            2: { name: "Dirt", color: 0x866043, solid: true },
+            3: { name: "Stone", color: 0x737373, solid: true },
+            4: { name: "Oak Log", color: 0x6a4e32, solid: true },
+            5: { name: "Leaves", color: 0x3b6622, solid: true },
+            6: { name: "Planks", color: 0xb9935a, solid: true },
+            7: { name: "Glass", color: 0xcfefff, solid: true },
+            8: { name: "Water", color: 0x4277c4, solid: false }
+        };
+
+        // Inventory Systems Setup
+        let hotbarIds = [1, 2, 3, 4, 6]; 
+        let activeSlotIndex = 0;
+        let hubOpen = false;
+
+        // Player Controls States
+        let moveF = false, moveB = false, moveL = false, moveR = false, canJump = false;
         const velocity = new THREE.Vector3();
         const clock = new THREE.Clock();
 
-        // Block Durabilities (Time required to break in seconds)
-        const blockTypes = {
-            1: { name: "Grass Block", color: 0x557a2b, hardness: 0.5 },
-            2: { name: "Dirt", color: 0x866043, hardness: 0.4 },
-            3: { name: "Stone", color: 0x737373, hardness: 1.5 },
-            4: { name: "Wood Planks", color: 0xa07f59, hardness: 1.0 },
-            5: { name: "Glass", color: 0xddf2f2, transparent: true, opacity: 0.5, hardness: 0.2 }
-        };
-
-        // Mining State Tracking
-        let currentMiningTarget = null;
-        let miningProgress = 0; // accumulated seconds spent mining
-
-        const blocker = document.getElementById('blocker');
-        const hotbarSlots = document.querySelectorAll('.hotbar-slot');
-        const blockLabel = document.getElementById('block-label');
-        const progressBarContainer = document.getElementById('mining-progress-container');
-        const progressBar = document.getElementById('mining-bar');
-
         function init() {
             scene = new THREE.Scene();
-            scene.background = new THREE.Color(0xbfd1e5);
-            scene.fog = new THREE.FogExp2(0xbfd1e5, 0.04);
+            scene.background = new THREE.Color(0xadcfff);
+            scene.fog = new THREE.FogExp2(0xadcfff, 0.035);
 
-            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-            
-            // Spawn player safely on top of generation height safely
-            camera.position.set(WORLD_SIZE / 2, 12, WORLD_SIZE / 2);
+            camera = new THREE.PerspectiveCamera(65, window.innerWidth / window.innerHeight, 0.1, 150);
+            camera.position.set(24, 15, 24);
 
-            const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
             scene.add(ambientLight);
+            const dirLight = new THREE.DirectionalLight(0xffffff, 0.5);
+            dirLight.position.set(10, 40, 15);
+            scene.add(dirLight);
 
-            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.65);
-            directionalLight.position.set(20, 40, 10).normalize();
-            scene.add(directionalLight);
-
-            renderer = new THREE.WebGLRenderer({ antialias: true });
-            renderer.setPixelRatio(window.devicePixelRatio);
+            renderer = new THREE.WebGLRenderer({ antialias: false, powerPreference: "high-performance" });
             renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(1); // Lock resolution to avoid low-end integrated GPU lag
             document.body.appendChild(renderer.domElement);
 
             controls = new THREE.PointerLockControls(camera, document.body);
-            blocker.addEventListener('click', () => controls.lock());
-            controls.addEventListener('lock', () => blocker.style.display = 'none');
-            controls.addEventListener('unlock', () => {
-                blocker.style.display = 'flex';
-                resetMining();
+            document.getElementById('blocker').addEventListener('click', () => {
+                if(!hubOpen) controls.lock();
             });
-            scene.add(controls.getObject());
+            controls.addEventListener('lock', () => document.getElementById('blocker').style.display = 'none');
+            controls.addEventListener('unlock', () => {
+                if(!hubOpen) document.getElementById('blocker').style.display = 'flex';
+            });
 
-            setupInputs();
-            generateWorld();
+            buildUI();
+            generateTerrainData();
+            renderAllChunks();
+            setupControls();
 
-            window.addEventListener('resize', onWindowResize);
+            window.addEventListener('resize', onResize);
             animate();
         }
 
-        // --- Generates 3D Terrain Matrix ---
-        function generateWorld() {
-            const geometry = new THREE.BoxGeometry(BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE);
+        // --- Procedural Generation (Terrain, Water, Trees) ---
+        function generateTerrainData() {
+            const maxCoord = CHUNK_SIZE * WORLD_CHUNKS_AXIS;
+            
+            // Phase 1: Basic Heightmap
+            for(let x=0; x<maxCoord; x++) {
+                for(let z=0; z<maxCoord; z++) {
+                    let height = Math.floor(Math.sin(x*0.12) * Math.cos(z*0.12) * 3 + 7);
+                    
+                    for(let y=0; y<=14; y++) {
+                        let key = `${x},${y},${z}`;
+                        if(y === height && y > 5) worldData[key] = 1; // Grass Top
+                        else if(y <= height && y > height - 3) worldData[key] = 2; // Dirt
+                        else if(y <= height - 3) worldData[key] = 3; // Stone
+                        else if(y <= 5) worldData[key] = 8; // Water Layer default basin
+                    }
+                }
+            }
 
-            for (let x = 0; x < WORLD_SIZE; x++) {
-                for (let z = 0; z < WORLD_SIZE; z++) {
-                    // Standard multi-frequency math wave formula acting as realistic terrain noise
-                    const heightValue = Math.sin(x * 0.1) * Math.cos(z * 0.1) * 3 + Math.sin(x * 0.05) * 4 + 6;
-                    const surfaceY = Math.floor(heightValue);
-
-                    for (let y = 0; y <= surfaceY; y++) {
-                        let type = 3; // Default Deep Stone
-                        if (y === surfaceY) type = 1; // Top Soil Grass
-                        else if (y > surfaceY - 3) type = 2; // Mid Soil Dirt
-
-                        createBlock(x, y, z, type, geometry);
+            // Phase 2: Grow Trees on Random Grass Blocks
+            for(let x=4; x<maxCoord-4; x+=7) {
+                for(let z=4; z<maxCoord-4; z+=7) {
+                    if(Math.random() > 0.4) { 
+                        let surfaceY = 0;
+                        while(worldData[`${x},${surfaceY+1},${z}`] !== undefined) {
+                            surfaceY++;
+                        }
+                        if(worldData[`${x},${surfaceY},${z}`] === 1) { // If it's grass, grow a tree
+                            growTree(x, surfaceY + 1, z);
+                        }
                     }
                 }
             }
         }
 
-        function createBlock(x, y, z, type, sharedGeometry = null) {
-            const key = `${x},${y},${z}`;
-            if (blocksWorld[key]) return;
-
-            const geom = sharedGeometry || new THREE.BoxGeometry(BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE);
-            const config = blockTypes[type];
-            
-            const mat = new THREE.MeshLambertMaterial({ 
-                color: config.color,
-                transparent: config.transparent || false,
-                opacity: config.opacity || 1.0
-            });
-
-            const mesh = new THREE.Mesh(geom, mat);
-            mesh.position.set(x, y, z);
-            scene.add(mesh);
-
-            blocksWorld[key] = { mesh: mesh, type: type };
+        function growTree(tx, ty, tz) {
+            // Trunk
+            for(let i=0; i<4; i++) worldData[`${tx},${ty+i},${tz}`] = 4;
+            // Foliage Leaves canopy box
+            for(let lx=-1; lx<=1; lx++) {
+                for(let lz=-1; lz<=1; lz++) {
+                    for(let ly=2; ly<=4; ly++) {
+                        let k = `${tx+lx},${ty+ly},${tz+lz}`;
+                        if(!worldData[k]) worldData[k] = 5;
+                    }
+                }
+            }
         }
 
-        // --- Realistic 3D Box Collision Check ---
-        function checkCollision(position) {
-            // Predict box footprint corners based on physics body diameter limits
-            const minX = Math.floor(position.x - PLAYER_RADIUS);
-            const maxX = Math.floor(position.x + PLAYER_RADIUS);
-            const minZ = Math.floor(position.z - PLAYER_RADIUS);
-            const maxZ = Math.floor(position.z + PLAYER_RADIUS);
-            
-            const minY = Math.floor(position.y - PLAYER_HEIGHT);
-            const maxY = Math.floor(position.y);
+        // --- HIGH OPTIMIZATION: Chunk Mesh Combiner Logic ---
+        function renderAllChunks() {
+            for(let cx=0; cx<WORLD_CHUNKS_AXIS; cx++) {
+                for(let cz=0; cz<WORLD_CHUNKS_AXIS; cz++) {
+                    buildChunkGeometry(cx, cz);
+                }
+            }
+        }
 
-            // Scan adjacent coordinate boundaries for solid blocks
-            for (let x = minX; x <= maxX; x++) {
-                for (let y = minY; y <= maxY; y++) {
-                    for (let z = minZ; z <= maxZ; z++) {
-                        if (blocksWorld[`${x},${y},${z}`]) {
-                            return true; // Hit a block wall!
+        function buildChunkGeometry(cx, cz) {
+            const chunkKey = `${cx},${cz}`;
+            if(chunks[chunkKey]) scene.remove(chunks[chunkKey]);
+
+            // Create temporary data holders for building a single combined geometry array buffer
+            const positions = [];
+            const colors = [];
+            const startX = cx * CHUNK_SIZE;
+            const startZ = cz * CHUNK_SIZE;
+
+            const boxGeo = new THREE.BoxGeometry(1,1,1);
+
+            for(let x=startX; x<startX+CHUNK_SIZE; x++) {
+                for(let z=startZ; z<startZ+CHUNK_SIZE; z++) {
+                    for(let y=0; y<16; y++) {
+                        let type = worldData[`${x},${y},${z}`];
+                        if(!type) continue;
+
+                        // Check visibility optimization: Don't render faces hidden completely by solid blocks
+                        let top = worldData[`${x},${y+1},${z}`];
+                        let bot = worldData[`${x},${y-1},${z}`];
+                        let left = worldData[`${x-1},${y},${z}`];
+                        let right = worldData[`${x+1},${y},${z}`];
+                        let front = worldData[`${x},${y},${z+1}`];
+                        let back = worldData[`${x},${y},${z-1}`];
+
+                        if(top && bot && left && right && front && back) continue; // Completely hidden block inside terrain
+
+                        // Clone positions from standard matrix coordinates offsets
+                        let tempMesh = new THREE.Mesh(boxGeo);
+                        tempMesh.position.set(x, y, z);
+                        tempMesh.updateMatrix();
+
+                        // Extract vertex buffers to merge them into our optimized giant mesh mapping arrays
+                        const posAttr = boxGeo.attributes.position;
+                        const col = new THREE.Color(blockRegistry[type].color);
+
+                        for(let i=0; i<posAttr.count; i++) {
+                            let vertex = new THREE.Vector3().fromBufferAttribute(posAttr, i);
+                            vertex.applyMatrix4(tempMesh.matrix);
+                            positions.push(vertex.x, vertex.y, vertex.z);
+                            colors.push(col.r, col.g, col.b);
                         }
+                    }
+                }
+            }
+
+            if(positions.length === 0) return;
+
+            // Generate optimized BufferGeometry
+            const combinedGeo = new THREE.BufferGeometry();
+            combinedGeo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+            combinedGeo.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+            combinedGeo.computeVertexNormals();
+
+            const combinedMat = new THREE.MeshLambertMaterial({ vertexColors: true });
+            const chunkMesh = new THREE.Mesh(combinedGeo, combinedMat);
+            
+            scene.add(chunkMesh);
+            chunks[chunkKey] = chunkMesh;
+        }
+
+        function updateBlockAtPosition(x, y, z, type) {
+            let key = `${x},${y},${z}`;
+            if(type === 0) delete worldData[key];
+            else worldData[key] = type;
+
+            // Rebuild the localized chunk mesh instantly where modification took place
+            let cx = Math.floor(x / CHUNK_SIZE);
+            let cz = Math.floor(z / CHUNK_SIZE);
+            buildChunkGeometry(cx, cz);
+            
+            // Rebuild neighbors if change occurred on border rims
+            if(x % CHUNK_SIZE === 0) buildChunkGeometry(cx-1, cz);
+            if(x % CHUNK_SIZE === CHUNK_SIZE-1) buildChunkGeometry(cx+1, cz);
+            if(z % CHUNK_SIZE === 0) buildChunkGeometry(cx, cz-1);
+            if(z % CHUNK_SIZE === CHUNK_SIZE-1) buildChunkGeometry(cx, cz+1);
+        }
+
+        // --- Collision System Mechanics ---
+        function checkCollisions(pos) {
+            let mX = Math.floor(pos.x - PLAYER_RADIUS), pX = Math.floor(pos.x + PLAYER_RADIUS);
+            let mZ = Math.floor(pos.z - PLAYER_RADIUS), pZ = Math.floor(pos.z + PLAYER_RADIUS);
+            let mY = Math.floor(pos.y - PLAYER_HEIGHT), pY = Math.floor(pos.y);
+
+            for(let x=mX; x<=pX; x++) {
+                for(let y=mY; y<=pY; y++) {
+                    for(let z=mZ; z<=pZ; z++) {
+                        let b = worldData[`${x},${y},${z}`];
+                        if(b && blockRegistry[b].solid) return true;
                     }
                 }
             }
             return false;
         }
 
-        // --- Interaction Handlers (Mining Engine & Placements) ---
-        function updateMining(delta) {
-            if (!isMining || !controls.isLocked) {
-                resetMining();
-                return;
+        // --- Block Interaction Handlers ---
+        function handleInteraction(isDestroy) {
+            if(!controls.isLocked) return;
+            const ray = new THREE.Raycaster();
+            ray.setFromCamera(new THREE.Vector2(0,0), camera);
+
+            // Create temporary flat items targets array for math distance ray interception matches
+            let hitTarget = null;
+            let closestDist = 6; // Reach limit range
+
+            Object.keys(worldData).forEach(key => {
+                let coords = key.split(',').map(Number);
+                let dist = camera.position.distanceTo(new THREE.Vector3(coords[0], coords[1], coords[2]));
+                if(dist < closestDist) {
+                    let intersects = ray.intersectBox(new THREE.Box3(
+                        new THREE.Vector3(coords[0]-0.5, coords[1]-0.5, coords[2]-0.5),
+                        new THREE.Vector3(coords[0]+0.5, coords[1]+0.5, coords[2]+0.5)
+                    ), new THREE.Vector3());
+                    if(intersects) {
+                        closestDist = dist;
+                        hitTarget = { coords: coords, rayHit: intersects };
+                    }
+                }
+            });
+
+            if(hitTarget) {
+                let cx = hitTarget.coords[0];
+                let cy = hitTarget.coords[1];
+                let cz = hitTarget.coords[2];
+
+                if(isDestroy) {
+                    updateBlockAtPosition(cx, cy, cz, 0);
+                } else {
+                    // Place: Calculate closest geometric surface normal side vector face manually
+                    let p = camera.position;
+                    let nx = 0, ny = 0, nz = 0;
+                    let dx = p.x - cx, dy = p.y - cy, dz = p.z - cz;
+                    if(Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > Math.abs(dz)) nx = dx > 0 ? 1 : -1;
+                    else if(Math.abs(dy) > Math.abs(dx) && Math.abs(dy) > Math.abs(dz)) ny = dy > 0 ? 1 : -1;
+                    else nz = dz > 0 ? 1 : -1;
+
+                    updateBlockAtPosition(cx+nx, cy+ny, cz+nz, hotbarIds[activeSlotIndex]);
+                }
             }
+        }
 
-            const raycaster = new THREE.Raycaster();
-            raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
-            const targets = Object.values(blocksWorld).map(b => b.mesh);
-            const intersects = raycaster.intersectObjects(targets);
+        // --- Interface UI Elements Renderer Systems ---
+        function buildUI() {
+            const bar = document.getElementById('hotbar');
+            bar.innerHTML = '';
+            hotbarIds.forEach((id, idx) => {
+                let slot = document.createElement('div');
+                slot.className = `slot ${idx === activeSlotIndex ? 'active' : ''}`;
+                slot.style.backgroundColor = '#' + blockRegistry[id].color.toString(16);
+                slot.innerText = blockRegistry[id].name;
+                slot.onclick = () => { activeSlotIndex = idx; buildUI(); };
+                bar.appendChild(slot);
+            });
 
-            if (intersects.length > 0 && intersects[0].distance < 5) {
-                const blockMesh = intersects[0].object;
-                const bp = blockMesh.position;
-                const currentKey = `${bp.x},${bp.y},${bp.z}`;
+            // Populate Creative Inventory Interface
+            const hub = document.getElementById('creative-hub');
+            Object.keys(blockRegistry).forEach(id => {
+                let bId = Number(id);
+                let item = document.createElement('div');
+                item.className = 'slot';
+                item.style.backgroundColor = '#' + blockRegistry[bId].color.toString(16);
+                item.innerText = blockRegistry[bId].name;
+                item.onclick = () => {
+                    hotbarIds[activeSlotIndex] = bId;
+                    buildUI();
+                    toggleHub();
+                };
+                hub.appendChild(item);
+            });
+        }
 
-                // If targeting a brand new block, reset timers
-                if (currentMiningTarget !== currentKey) {
-                    currentMiningTarget = currentKey;
-                    miningProgress = 0;
-                }
-
-                const blockData = blocksWorld[currentKey];
-                const totalHardness = blockTypes[blockData.type].hardness;
-
-                // Progress accumulation based on time framework
-                miningProgress += delta;
-                progressBarContainer.style.display = 'block';
-                progressBar.style.width = `${Math.min((miningProgress / totalHardness) * 100, 100)}%`;
-
-                // If time spent passes hardness threshold requirement, delete block instantly
-                if (miningProgress >= totalHardness) {
-                    scene.remove(blockMesh);
-                    blockMesh.geometry.dispose();
-                    blockMesh.material.dispose();
-                    delete blocksWorld[currentKey];
-                    resetMining();
-                }
+        function toggleHub() {
+            hubOpen = !hubOpen;
+            const hub = document.getElementById('creative-hub');
+            if(hubOpen) {
+                hub.style.display = 'flex';
+                controls.unlock();
             } else {
-                resetMining();
-            }
-        }
-
-        function resetMining() {
-            isMining = false;
-            currentMiningTarget = null;
-            miningProgress = 0;
-            progressBarContainer.style.display = 'none';
-            progressBar.style.width = '0%';
-        }
-
-        function placeBlock() {
-            if (!controls.isLocked) return;
-
-            const raycaster = new THREE.Raycaster();
-            raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
-            const targets = Object.values(blocksWorld).map(b => b.mesh);
-            const intersects = raycaster.intersectObjects(targets);
-
-            if (intersects.length > 0 && intersects[0].distance < 5) {
-                const hit = intersects[0];
-                const bp = hit.object.position;
-                const normal = hit.face.normal;
-
-                const newX = Math.round(bp.x + normal.x);
-                const newY = Math.round(bp.y + normal.y);
-                const newZ = Math.round(bp.z + normal.z);
-
-                // Prevent placing block inside player's body boundaries
-                const tempPos = controls.getObject().position.clone();
-                const pMinX = Math.floor(tempPos.x - PLAYER_RADIUS);
-                const pMaxX = Math.floor(tempPos.x + PLAYER_RADIUS);
-                const pMinZ = Math.floor(tempPos.z - PLAYER_RADIUS);
-                const pMaxZ = Math.floor(tempPos.z + PLAYER_RADIUS);
-                const pMinY = Math.floor(tempPos.y - PLAYER_HEIGHT);
-                const pMaxY = Math.floor(tempPos.y);
-
-                if (newX >= pMinX && newX <= pMaxX && 
-                    newZ >= pMinZ && newZ <= pMaxZ && 
-                    newY >= pMinY && newY <= pMaxY) {
-                    return; // Block would collide with player footprint layout
-                }
-
-                createBlock(newX, newY, newZ, activeBlockType);
+                hub.style.display = 'none';
+                controls.lock();
             }
         }
 
         // --- Inputs Configurations ---
-        function setupInputs() {
+        function setupControls() {
             document.addEventListener('keydown', (e) => {
+                if(e.code === 'KeyE') { toggleHub(); e.preventDefault(); return; }
+                if(hubOpen) return;
                 switch (e.code) {
-                    case 'KeyW': moveForward = true; break;
-                    case 'KeyA': moveLeft = true; break;
-                    case 'KeyS': moveBackward = true; break;
-                    case 'KeyD': moveRight = true; break;
-                    case 'Space':
-                        if (canJump) {
-                            velocity.y = 7.0; // Jump force velocity push
-                            canJump = false;
-                        }
-                        break;
-                    case 'Digit1': switchSlot(1); break;
-                    case 'Digit2': switchSlot(2); break;
-                    case 'Digit3': switchSlot(3); break;
-                    case 'Digit4': switchSlot(4); break;
-                    case 'Digit5': switchSlot(5); break;
+                    case 'KeyW': moveF = true; break;
+                    case 'KeyS': moveB = true; break;
+                    case 'KeyA': moveL = true; break;
+                    case 'KeyD': moveR = true; break;
+                    case 'Space': if(canJump) { velocity.y = 6.2; canJump = false; } break;
+                    case 'Digit1': activeSlotIndex = 0; buildUI(); break;
+                    case 'Digit2': activeSlotIndex = 1; buildUI(); break;
+                    case 'Digit3': activeSlotIndex = 2; buildUI(); break;
+                    case 'Digit4': activeSlotIndex = 3; buildUI(); break;
+                    case 'Digit5': activeSlotIndex = 4; buildUI(); break;
                 }
             });
 
             document.addEventListener('keyup', (e) => {
                 switch (e.code) {
-                    case 'KeyW': moveForward = false; break;
-                    case 'KeyA': moveLeft = false; break;
-                    case 'KeyS': moveBackward = false; break;
-                    case 'KeyD': moveRight = false; break;
+                    case 'KeyW': moveF = false; break;
+                    case 'KeyS': moveB = false; break;
+                    case 'KeyA': moveL = false; break;
+                    case 'KeyD': moveR = false; break;
                 }
             });
 
             document.addEventListener('mousedown', (e) => {
-                if (!controls.isLocked) return;
-                if (e.button === 0) isMining = true; // Hold Left Click to Mine
-                if (e.button === 2) placeBlock();    // Right click places blocks
-            });
-
-            document.addEventListener('mouseup', (e) => {
-                if (e.button === 0) resetMining();
+                if(hubOpen) return;
+                if(e.button === 0) handleInteraction(true);
+                if(e.button === 2) handleInteraction(false);
             });
         }
 
-        function switchSlot(index) {
-            activeBlockType = index;
-            hotbarSlots.forEach(s => s.classList.remove('active'));
-            hotbarSlots[index - 1].classList.add('active');
-            blockLabel.innerText = blockTypes[index].name;
-        }
-
-        function onWindowResize() {
+        function onResize() {
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
             renderer.setSize(window.innerWidth, window.innerHeight);
@@ -436,68 +434,38 @@
         function animate() {
             requestAnimationFrame(animate);
 
-            if (controls.isLocked) {
-                const delta = Math.min(clock.getDelta(), 0.1); // Clamp delta to avoid deep wall glitches on frame drops
+            if (controls.isLocked && !hubOpen) {
+                const delta = Math.min(clock.getDelta(), 0.1);
 
-                updateMining(delta);
+                velocity.y -= 18.0 * delta; // Gravity
 
-                // Apply Gravity Acceleration Simulation
-                velocity.y -= 22.0 * delta; 
-
-                // Determine keyboard movement values
-                const speed = 4.5;
-                let moveX = 0;
-                let moveZ = 0;
-
-                if (moveForward) moveZ -= 1;
-                if (moveBackward) moveZ += 1;
-                if (moveLeft) moveX -= 1;
-                if (moveRight) moveX += 1;
-
-                // Translate flat movement into 3D Camera Direction orientation angles
+                let dirX = Number(moveR) - Number(moveL);
+                let dirZ = Number(moveF) - Number(moveB);
+                
                 const camDir = new THREE.Vector3();
                 camera.getWorldDirection(camDir);
-                camDir.y = 0;
-                camDir.normalize();
+                camDir.y = 0; camDir.normalize();
+                const camRight = new THREE.Vector3().crossVectors(camDir, camera.up).normalize().negate();
 
-                const camRight = new THREE.Vector3();
-                camRight.crossVectors(camDir, camera.up).normalize().negate();
+                const moveVector = new THREE.Vector3();
+                moveVector.addScaledVector(camDir, dirZ).addScaledVector(camRight, dirX).normalize().multiplyScalar(5.0 * delta);
 
-                const finalMove = new THREE.Vector3();
-                finalMove.addScaledVector(camDir, moveZ);
-                finalMove.addScaledVector(camRight, moveX);
-                finalMove.normalize().multiplyScalar(speed * delta);
-
-                // --- AXIS SPLIT SEPARATE COLLISION RESOLUTION ---
                 const playerObj = controls.getObject();
-                
-                // 1. Check & Resolve X movement safely
-                playerObj.position.x += finalMove.x;
-                if (checkCollision(playerObj.position)) {
-                    playerObj.position.x -= finalMove.x; // Revert if wall hit
-                }
 
-                // 2. Check & Resolve Z movement safely
-                playerObj.position.z += finalMove.z;
-                if (checkCollision(playerObj.position)) {
-                    playerObj.position.z -= finalMove.z; // Revert if wall hit
-                }
+                playerObj.position.x += moveVector.x;
+                if(checkCollisions(playerObj.position)) playerObj.position.x -= moveVector.x;
 
-                // 3. Check & Resolve Vertical Gravity physics movement safely
+                playerObj.position.z += moveVector.z;
+                if(checkCollisions(playerObj.position)) playerObj.position.z -= moveVector.z;
+
                 playerObj.position.y += velocity.y * delta;
-                if (checkCollision(playerObj.position)) {
-                    if (velocity.y < 0) {
-                        canJump = true; // Landing on floor reset
-                    }
-                    playerObj.position.y -= velocity.y * delta; // Snap position directly above/below obstacle hit
+                if(checkCollisions(playerObj.position)) {
+                    if(velocity.y < 0) canJump = true;
+                    playerObj.position.y -= velocity.y * delta;
                     velocity.y = 0;
                 }
 
-                // Safety boundaries fallback loop reset
-                if (playerObj.position.y < -30) {
-                    playerObj.position.set(WORLD_SIZE / 2, 15, WORLD_SIZE / 2);
-                    velocity.y = 0;
-                }
+                if(playerObj.position.y < -10) { playerObj.position.set(24, 15, 24); velocity.y = 0; }
             }
 
             renderer.render(scene, camera);
