@@ -3,469 +3,581 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Super Optimized Web Voxel Craft</title>
+    <title>Advanced Infinite Voxel Engine</title>
     <style>
         body {
             margin: 0; padding: 0; overflow: hidden;
-            font-family: 'Courier New', Courier, monospace; user-select: none;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; user-select: none;
+            background-color: #adcfff;
         }
         #crosshair {
             position: absolute; top: 50%; left: 50%;
-            width: 10px; height: 10px; transform: translate(-50%, -50%);
-            color: white; font-weight: bold; font-size: 24px;
-            pointer-events: none; z-index: 5;
+            width: 12px; height: 12px; transform: translate(-50%, -50%);
+            color: rgba(255,255,255,0.8); font-size: 26px;
+            pointer-events: none; z-index: 10; display: flex; align-items: center; justify-content: center;
         }
-        #hud {
-            position: absolute; top: 10px; left: 10px;
-            color: #00ff00; background: rgba(0,0,0,0.7);
-            padding: 10px; font-size: 12px; border-radius: 3px; pointer-events: none;
+        #hud-overlay {
+            position: absolute; top: 15px; left: 15px;
+            color: #00ffcc; background: rgba(15, 15, 15, 0.85);
+            padding: 12px; font-size: 13px; border-radius: 6px; 
+            border: 1px solid #333; pointer-events: none; line-height: 1.6;
         }
-        /* UI Hotbar & Inventory */
-        #hotbar {
+        #hotbar-wrapper {
             position: absolute; bottom: 20px; left: 50%;
-            transform: translateX(-50%); background: rgba(30, 30, 30, 0.85);
-            padding: 6px; border-radius: 4px; display: flex; gap: 6px;
-            border: 2px solid #555; pointer-events: auto;
+            transform: translateX(-50%); background: rgba(25, 25, 25, 0.9);
+            padding: 8px; border-radius: 6px; display: flex; gap: 8px;
+            border: 2px solid #444; pointer-events: auto; z-index: 5;
         }
-        .slot {
-            width: 46px; height: 46px; border: 3px solid #3a3a3a;
-            background: #8b8b8b; display: flex; align-items: center;
-            justify-content: center; color: white; font-size: 10px;
-            font-weight: bold; text-align: center; cursor: pointer;
+        .hotbar-slot {
+            width: 48px; height: 48px; border: 3px solid #333;
+            background: #777; display: flex; align-items: center;
+            justify-content: center; color: white; font-size: 11px;
+            font-weight: bold; text-align: center; cursor: pointer; border-radius: 4px;
         }
-        .slot.active { border-color: #ffffff; box-shadow: 0 0 8px #fff; }
+        .hotbar-slot.active { border-color: #00ffcc; box-shadow: 0 0 12px #00ffcc; }
         
-        /* Creative Inventory Menu */
-        #creative-hub {
+        #creative-menu {
             position: absolute; top: 50%; left: 50%;
-            transform: translate(-50%, -50%); width: 340px; height: 240px;
-            background: rgba(40, 40, 40, 0.95); border: 3px solid #666;
-            padding: 15px; display: none; flex-wrap: wrap; gap: 8px;
-            overflow-y: auto; border-radius: 6px; z-index: 20;
+            transform: translate(-50%, -50%); width: 360px; height: 260px;
+            background: rgba(30, 30, 30, 0.95); border: 3px solid #555;
+            padding: 20px; display: none; flex-wrap: wrap; gap: 10px;
+            overflow-y: auto; border-radius: 8px; z-index: 100; box-shadow: 0 0 20px rgba(0,0,0,0.7);
         }
-        .hub-title { width: 100%; color: #fff; margin-bottom: 5px; font-size: 14px; text-transform: uppercase;}
+        .menu-title { width: 100%; color: #fff; margin-bottom: 10px; font-size: 15px; letter-spacing: 1px; font-weight: bold; }
         
         #blocker {
             position: absolute; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.75); display: flex;
+            background: rgba(10, 10, 10, 0.85); display: flex;
             justify-content: center; align-items: center;
-            color: white; cursor: pointer; text-align: center; z-index: 30;
+            color: white; cursor: pointer; text-align: center; z-index: 200;
+        }
+        .btn-play {
+            background: #00ffcc; color: #111; padding: 10px 25px; 
+            border: none; font-weight: bold; font-size: 16px; border-radius: 4px; cursor: pointer; margin-top: 15px;
         }
     </style>
 </head>
 <body>
     <div id="blocker">
         <div>
-            <h1 style="margin:0 0 10px 0;">VoxelCraft Lite</h1>
-            <p>Optimized for Low-End Laptops</p>
-            <strong style="color:#ffcc00;">CLICK TO PLAY</strong><br><br>
-            Move: WASD | Jump: SPACE<br>
-            Mine: Hold Left Click | Place: Right Click<br>
-            Inventory Hub: Press [ E ]
+            <h1 style="margin:0 0 5px 0; color: #00ffcc;">VoxelEngine Infinite</h1>
+            <p style="margin:0 0 20px 0; color: #aaa;">Advanced Multithreaded-Style Buffer Mesher</p>
+            <div style="font-size: 14px; line-height: 1.6; background: rgba(255,255,255,0.05); padding: 15px; border-radius: 6px;">
+                Move: <strong>WASD</strong> | Jump: <strong>SPACE</strong><br>
+                Mine Block: <strong>Left Click</strong> | Place Block: <strong>Right Click</strong><br>
+                Open Creative Hub: <strong>[ E ]</strong> | Quick Slot Hotbar: <strong>1 - 5</strong>
+            </div>
+            <button class="btn-play">LAUNCH WORLD</button>
         </div>
     </div>
 
     <div id="crosshair">+</div>
-    <div id="hud">FPS/RAM Optimized Engine<br>Chunk Buffers: Active<br>Press E for Creative Hub</div>
     
-    <div id="creative-hub">
-        <div class="hub-title">Creative Inventory (Click to Equip)</div>
+    <div id="hud-overlay">
+        <strong>ENGINE STATUS:</strong> ACTIVE<br>
+        <span id="stat-coords">XYZ: Calibrating...</span><br>
+        <span id="stat-chunks">Rendered Chunks: 0</span><br>
+        Memory Management: Pool Buffer Active
+    </div>
+    
+    <div id="creative-menu">
+        <div class="menu-title">CREATIVE HUB (SELECT ITEM)</div>
     </div>
 
-    <div id="hotbar"></div>
+    <div id="hotbar-wrapper"></div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/PointerLockControls.js"></script>
 
     <script>
-        // --- Core Engine Configuration ---
+        // --- CONSTANTS & CONFIGURATION ---
         const CHUNK_SIZE = 16;
-        const WORLD_CHUNKS_AXIS = 3; // 3x3 Chunks surrounding player safely
-        const PLAYER_RADIUS = 0.3;
-        const PLAYER_HEIGHT = 1.6;
+        const CHUNK_HEIGHT = 32;
+        const RENDER_DISTANCE = 2; // Radius of chunks handled around player dynamically
+        const PLAYER_RADIUS = 0.32;
+        const PLAYER_HEIGHT = 1.65;
 
         let scene, camera, renderer, controls;
-        let chunks = {}; // Stores combined mesh data mapping
-        let worldData = {}; // Raw numerical block matrix layout data: "x,y,z" => blockType
-        
-        // Block Registry Definitions (Using standard matching colors)
-        const blockRegistry = {
-            1: { name: "Grass", color: 0x5c8e32, solid: true },
-            2: { name: "Dirt", color: 0x866043, solid: true },
-            3: { name: "Stone", color: 0x737373, solid: true },
-            4: { name: "Oak Log", color: 0x6a4e32, solid: true },
-            5: { name: "Leaves", color: 0x3b6622, solid: true },
-            6: { name: "Planks", color: 0xb9935a, solid: true },
-            7: { name: "Glass", color: 0xcfefff, solid: true },
-            8: { name: "Water", color: 0x4277c4, solid: false }
+        let activeChunks = {};   // Active live meshes in scene: "cx,cz" -> Mesh
+        let globalWorldMap = {}; // Master Voxel Storage: "x,y,z" -> BlockID
+
+        // Advanced Block Registry System
+        const BlockRegistry = {
+            1: { name: "Grass Top", color: 0x5a8f35, solid: true },
+            2: { name: "Dirt Core", color: 0x866043, solid: true },
+            3: { name: "Deep Stone", color: 0x707070, solid: true },
+            4: { name: "Oak Trunk", color: 0x6b4e31, solid: true },
+            5: { name: "Oak Leaves", color: 0x3c6424, solid: true },
+            6: { name: "Wood Plank", color: 0xbfa26f, solid: true },
+            7: { name: "Glass Panel", color: 0xdff5f5, solid: true },
+            8: { name: "Water Basin", color: 0x4775c4, solid: false }
         };
 
-        // Inventory Systems Setup
-        let hotbarIds = [1, 2, 3, 4, 6]; 
-        let activeSlotIndex = 0;
-        let hubOpen = false;
+        let hotbarSelection = [1, 2, 3, 4, 7];
+        let currentHotbarIndex = 0;
+        let isHubOpen = false;
 
-        // Player Controls States
-        let moveF = false, moveB = false, moveL = false, moveR = false, canJump = false;
-        const velocity = new THREE.Vector3();
-        const clock = new THREE.Clock();
+        // Input Trackers
+        let keys = { Forward: false, Backward: false, Left: false, Right: false };
+        let canPlayerJump = false;
+        const playerVelocity = new THREE.Vector3();
+        const frameClock = new THREE.Clock();
 
+        // --- INTERNALLY BACKED PSEUDO-PERLIN NOISE MATH ENGINE ---
+        // Generates continuous organic terrain hills/valleys
+        const NoiseEngine = {
+            u: new Uint8Array(256),
+            init: function() {
+                for(let i=0; i<256; i++) this.u[i] = Math.floor(Math.random() * 256);
+            },
+            fade: t => t * t * t * (t * (t * 6 - 15) + 10),
+            lerp: (t, a, b) => a + t * (b - a),
+            grad: function(hash, x, z) {
+                const h = hash & 7;
+                const u = h < 4 ? x : z;
+                const v = h < 4 ? z : x;
+                return ((h & 1) ? -u : u) + ((h & 2) ? -2.0 * v : 2.0 * v);
+            },
+            get2D: function(x, z) {
+                const X = Math.floor(x) & 255, Z = Math.floor(z) & 255;
+                const xf = x - Math.floor(x), zf = z - Math.floor(z);
+                const uX = this.fade(xf), uZ = this.fade(zf);
+                const aa = this.u[(this.u[X] + Z) & 255];
+                const ab = this.u[(this.u[X] + Z + 1) & 255];
+                const ba = this.u[(this.u[X + 1] + Z) & 255];
+                const bb = this.u[(this.u[X + 1] + Z + 1) & 255];
+                return this.lerp(uZ, this.lerp(uX, this.grad(aa, xf, zf), this.grad(ba, xf - 1, zf)),
+                                     this.lerp(uX, this.grad(ab, xf, zf - 1), this.grad(bb, xf - 1, zf - 1)));
+            }
+        };
+        NoiseEngine.init();
+
+        // --- ENGINE STARTUP ---
         function init() {
             scene = new THREE.Scene();
             scene.background = new THREE.Color(0xadcfff);
-            scene.fog = new THREE.FogExp2(0xadcfff, 0.035);
+            scene.fog = new THREE.FogExp2(0xadcfff, 0.03);
 
-            camera = new THREE.PerspectiveCamera(65, window.innerWidth / window.innerHeight, 0.1, 150);
-            camera.position.set(24, 15, 24);
+            camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 200);
+            camera.position.set(16, 22, 16); // Safe default spawn coordinate layout
 
-            const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
-            scene.add(ambientLight);
-            const dirLight = new THREE.DirectionalLight(0xffffff, 0.5);
-            dirLight.position.set(10, 40, 15);
-            scene.add(dirLight);
+            const sunLight = new THREE.DirectionalLight(0xffffff, 0.65);
+            sunLight.position.set(40, 80, 30);
+            scene.add(sunLight);
+            scene.add(new THREE.AmbientLight(0xffffff, 0.5));
 
             renderer = new THREE.WebGLRenderer({ antialias: false, powerPreference: "high-performance" });
             renderer.setSize(window.innerWidth, window.innerHeight);
-            renderer.setPixelRatio(1); // Lock resolution to avoid low-end integrated GPU lag
+            renderer.setPixelRatio(1); // Performance saver for mobile / basic integrated laptop chips
             document.body.appendChild(renderer.domElement);
 
             controls = new THREE.PointerLockControls(camera, document.body);
-            document.getElementById('blocker').addEventListener('click', () => {
-                if(!hubOpen) controls.lock();
-            });
+            document.getElementById('blocker').addEventListener('click', () => { if(!isHubOpen) controls.lock(); });
             controls.addEventListener('lock', () => document.getElementById('blocker').style.display = 'none');
-            controls.addEventListener('unlock', () => {
-                if(!hubOpen) document.getElementById('blocker').style.display = 'flex';
-            });
+            controls.addEventListener('unlock', () => { if(!isHubOpen) document.getElementById('blocker').style.display = 'flex'; });
 
-            buildUI();
-            generateTerrainData();
-            renderAllChunks();
-            setupControls();
+            buildUserInterface();
+            manageDynamicChunks(); // Trigger initial map block generation pass
+            setupEventBindings();
 
-            window.addEventListener('resize', onResize);
-            animate();
+            window.addEventListener('resize', onWindowResize);
+            animateLoop();
         }
 
-        // --- Procedural Generation (Terrain, Water, Trees) ---
-        function generateTerrainData() {
-            const maxCoord = CHUNK_SIZE * WORLD_CHUNKS_AXIS;
-            
-            // Phase 1: Basic Heightmap
-            for(let x=0; x<maxCoord; x++) {
-                for(let z=0; z<maxCoord; z++) {
-                    let height = Math.floor(Math.sin(x*0.12) * Math.cos(z*0.12) * 3 + 7);
-                    
-                    for(let y=0; y<=14; y++) {
-                        let key = `${x},${y},${z}`;
-                        if(y === height && y > 5) worldData[key] = 1; // Grass Top
-                        else if(y <= height && y > height - 3) worldData[key] = 2; // Dirt
-                        else if(y <= height - 3) worldData[key] = 3; // Stone
-                        else if(y <= 5) worldData[key] = 8; // Water Layer default basin
-                    }
-                }
-            }
-
-            // Phase 2: Grow Trees on Random Grass Blocks
-            for(let x=4; x<maxCoord-4; x+=7) {
-                for(let z=4; z<maxCoord-4; z+=7) {
-                    if(Math.random() > 0.4) { 
-                        let surfaceY = 0;
-                        while(worldData[`${x},${surfaceY+1},${z}`] !== undefined) {
-                            surfaceY++;
-                        }
-                        if(worldData[`${x},${surfaceY},${z}`] === 1) { // If it's grass, grow a tree
-                            growTree(x, surfaceY + 1, z);
-                        }
-                    }
-                }
-            }
+        // --- INFINITE STREAMING WORLD GENERATION LAYER ---
+        function getChunkCoordinates(x, z) {
+            return {
+                cx: Math.floor(x / CHUNK_SIZE),
+                cz: Math.floor(z / CHUNK_SIZE)
+            };
         }
 
-        function growTree(tx, ty, tz) {
-            // Trunk
-            for(let i=0; i<4; i++) worldData[`${tx},${ty+i},${tz}`] = 4;
-            // Foliage Leaves canopy box
-            for(let lx=-1; lx<=1; lx++) {
-                for(let lz=-1; lz<=1; lz++) {
-                    for(let ly=2; ly<=4; ly++) {
-                        let k = `${tx+lx},${ty+ly},${tz+lz}`;
-                        if(!worldData[k]) worldData[k] = 5;
-                    }
-                }
-            }
-        }
+        function ensureChunkDataExists(cx, cz) {
+            const chunkId = `${cx},${cz}`;
+            // If data flag key exists, generation pass for this chunk was already completed previously
+            if (globalWorldMap[chunkId + "_loaded"]) return;
 
-        // --- HIGH OPTIMIZATION: Chunk Mesh Combiner Logic ---
-        function renderAllChunks() {
-            for(let cx=0; cx<WORLD_CHUNKS_AXIS; cx++) {
-                for(let cz=0; cz<WORLD_CHUNKS_AXIS; cz++) {
-                    buildChunkGeometry(cx, cz);
-                }
-            }
-        }
-
-        function buildChunkGeometry(cx, cz) {
-            const chunkKey = `${cx},${cz}`;
-            if(chunks[chunkKey]) scene.remove(chunks[chunkKey]);
-
-            // Create temporary data holders for building a single combined geometry array buffer
-            const positions = [];
-            const colors = [];
             const startX = cx * CHUNK_SIZE;
             const startZ = cz * CHUNK_SIZE;
 
-            const boxGeo = new THREE.BoxGeometry(1,1,1);
+            for (let x = startX; x < startX + CHUNK_SIZE; x++) {
+                for (let z = startZ; z < startZ + CHUNK_SIZE; z++) {
+                    
+                    // Complex multi-octave layered macro noise equations simulation
+                    const n1 = NoiseEngine.get2D(x * 0.04, z * 0.04) * 8;
+                    const n2 = NoiseEngine.get2D(x * 0.15, z * 0.15) * 2;
+                    const baseHeight = Math.floor(n1 + n2 + 12);
+                    const finalSurfaceHeight = Math.max(1, Math.min(CHUNK_HEIGHT - 1, baseHeight));
 
-            for(let x=startX; x<startX+CHUNK_SIZE; x++) {
-                for(let z=startZ; z<startZ+CHUNK_SIZE; z++) {
-                    for(let y=0; y<16; y++) {
-                        let type = worldData[`${x},${y},${z}`];
-                        if(!type) continue;
+                    for (let y = 0; y < CHUNK_HEIGHT; y++) {
+                        const key = `${x},${y},${z}`;
+                        
+                        if (y === finalSurfaceHeight && y > 8) {
+                            globalWorldMap[key] = 1; // Grass
+                        } else if (y < finalSurfaceHeight && y > finalSurfaceHeight - 3) {
+                            globalWorldMap[key] = 2; // Dirt
+                        } else if (y <= finalSurfaceHeight - 3) {
+                            globalWorldMap[key] = 3; // Stone
+                        } else if (y <= 8 && !globalWorldMap[key]) {
+                            globalWorldMap[key] = 8; // Global Sea-level water filling table logic
+                        }
+                    }
 
-                        // Check visibility optimization: Don't render faces hidden completely by solid blocks
-                        let top = worldData[`${x},${y+1},${z}`];
-                        let bot = worldData[`${x},${y-1},${z}`];
-                        let left = worldData[`${x-1},${y},${z}`];
-                        let right = worldData[`${x+1},${y},${z}`];
-                        let front = worldData[`${x},${y},${z+1}`];
-                        let back = worldData[`${x},${y},${z-1}`];
+                    // Procedural Tree Population Engine Math Rules
+                    if (x % 9 === 0 && z % 9 === 0 && Math.random() > 0.45) {
+                        const surfaceY = finalSurfaceHeight;
+                        if (globalWorldMap[`${x},${surfaceY},${z}`] === 1) {
+                            generateStructureTree(x, surfaceY + 1, z);
+                        }
+                    }
+                }
+            }
+            globalWorldMap[chunkId + "_loaded"] = true;
+        }
 
-                        if(top && bot && left && right && front && back) continue; // Completely hidden block inside terrain
+        function generateStructureTree(tx, ty, tz) {
+            for (let h = 0; h < 4; h++) globalWorldMap[`${tx},${ty + h},${tz}`] = 4; // Trunk logs
+            for (let ox = -2; ox <= 2; ox++) {
+                for (let oz = -2; oz <= 2; oz++) {
+                    for (let oy = 2; oy <= 4; oy++) {
+                        const leafKey = `${tx + ox},${ty + oy},${tz + oz}`;
+                        if (!globalWorldMap[leafKey]) globalWorldMap[leafKey] = 5; // Foliage leaves matrix
+                    }
+                }
+            }
+        }
 
-                        // Clone positions from standard matrix coordinates offsets
-                        let tempMesh = new THREE.Mesh(boxGeo);
-                        tempMesh.position.set(x, y, z);
-                        tempMesh.updateMatrix();
+        // --- ADVANCED ADVANCED MESH GENERATION (OPTIMIZED FACE CULLING BUFFER) ---
+        function buildChunkMesh(cx, cz) {
+            const chunkKey = `${cx},${cz}`;
+            if (activeChunks[chunkKey]) {
+                scene.remove(activeChunks[chunkKey]);
+                activeChunks[chunkKey].geometry.dispose();
+                delete activeChunks[chunkKey];
+            }
 
-                        // Extract vertex buffers to merge them into our optimized giant mesh mapping arrays
-                        const posAttr = boxGeo.attributes.position;
-                        const col = new THREE.Color(blockRegistry[type].color);
+            ensureChunkDataExists(cx, cz);
 
-                        for(let i=0; i<posAttr.count; i++) {
-                            let vertex = new THREE.Vector3().fromBufferAttribute(posAttr, i);
-                            vertex.applyMatrix4(tempMesh.matrix);
-                            positions.push(vertex.x, vertex.y, vertex.z);
-                            colors.push(col.r, col.g, col.b);
+            const positions = [];
+            const colors = [];
+            const baseBox = new THREE.BoxGeometry(1, 1, 1);
+
+            const startX = cx * CHUNK_SIZE;
+            const startZ = cz * CHUNK_SIZE;
+
+            for (let x = startX; x < startX + CHUNK_SIZE; x++) {
+                for (let z = startZ; z < startZ + CHUNK_SIZE; z++) {
+                    for (let y = 0; y < CHUNK_HEIGHT; y++) {
+                        const currentId = globalWorldMap[`${x},${y},${z}`];
+                        if (!currentId) continue;
+
+                        // Occlusion Culling Vector Check Optimization
+                        // Skips processing vertex positions for faces hidden from direct vision view parameters
+                        const opaqueTop = globalWorldMap[`${x},${y+1},${z}`];
+                        const opaqueBot = globalWorldMap[`${x},${y-1},${z}`];
+                        const opaqueLeft = globalWorldMap[`${x-1},${y},${z}`];
+                        const opaqueRight = globalWorldMap[`${x+1},${y},${z}`];
+                        const opaqueFront = globalWorldMap[`${x},${y},${z+1}`];
+                        const opaqueBack = globalWorldMap[`${x},${y},${z-1}`];
+
+                        if (opaqueTop && opaqueBot && opaqueLeft && opaqueRight && opaqueFront && opaqueBack) continue;
+
+                        const trackingMesh = new THREE.Mesh(baseBox);
+                        trackingMesh.position.set(x, y, z);
+                        trackingMesh.updateMatrix();
+
+                        const posAttribute = baseBox.attributes.position;
+                        const registryColor = new THREE.Color(BlockRegistry[currentId].color);
+
+                        for (let i = 0; i < posAttribute.count; i++) {
+                            const localVertex = new THREE.Vector3().fromBufferAttribute(posAttribute, i);
+                            localVertex.applyMatrix4(trackingMesh.matrix);
+                            positions.push(localVertex.x, localVertex.y, localVertex.z);
+                            colors.push(registryColor.r, registryColor.g, registryColor.b);
                         }
                     }
                 }
             }
 
-            if(positions.length === 0) return;
+            baseBox.dispose(); // Cleanup memory leaks natively instantly
 
-            // Generate optimized BufferGeometry
-            const combinedGeo = new THREE.BufferGeometry();
-            combinedGeo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
-            combinedGeo.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
-            combinedGeo.computeVertexNormals();
+            if (positions.length === 0) return;
 
-            const combinedMat = new THREE.MeshLambertMaterial({ vertexColors: true });
-            const chunkMesh = new THREE.Mesh(combinedGeo, combinedMat);
-            
-            scene.add(chunkMesh);
-            chunks[chunkKey] = chunkMesh;
+            const bufferGeometry = new THREE.BufferGeometry();
+            bufferGeometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+            bufferGeometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+            bufferGeometry.computeVertexNormals();
+
+            const chunkMaterial = new THREE.MeshLambertMaterial({ vertexColors: true });
+            const finalMesh = new THREE.Mesh(bufferGeometry, chunkMaterial);
+
+            scene.add(finalMesh);
+            activeChunks[chunkKey] = finalMesh;
         }
 
-        function updateBlockAtPosition(x, y, z, type) {
-            let key = `${x},${y},${z}`;
-            if(type === 0) delete worldData[key];
-            else worldData[key] = type;
+        // --- MANAGING STREAMING VISIBILITY TARGETS ---
+        function manageDynamicChunks() {
+            const playerPos = controls.getObject().position;
+            const currentChunkCoord = getChunkCoordinates(playerPos.x, playerPos.z);
 
-            // Rebuild the localized chunk mesh instantly where modification took place
-            let cx = Math.floor(x / CHUNK_SIZE);
-            let cz = Math.floor(z / CHUNK_SIZE);
-            buildChunkGeometry(cx, cz);
-            
-            // Rebuild neighbors if change occurred on border rims
-            if(x % CHUNK_SIZE === 0) buildChunkGeometry(cx-1, cz);
-            if(x % CHUNK_SIZE === CHUNK_SIZE-1) buildChunkGeometry(cx+1, cz);
-            if(z % CHUNK_SIZE === 0) buildChunkGeometry(cx, cz-1);
-            if(z % CHUNK_SIZE === CHUNK_SIZE-1) buildChunkGeometry(cx, cz+1);
+            const activeKeysThisFrame = new Set();
+
+            for (let xOffset = -RENDER_DISTANCE; xOffset <= RENDER_DISTANCE; xOffset++) {
+                for (let zOffset = -RENDER_DISTANCE; zOffset <= RENDER_DISTANCE; zOffset++) {
+                    const targetCx = currentChunkCoord.cx + xOffset;
+                    const targetCz = currentChunkCoord.cz + zOffset;
+                    const chunkKey = `${targetCx},${targetCz}`;
+                    
+                    activeKeysThisFrame.add(chunkKey);
+
+                    if (!activeChunks[chunkKey]) {
+                        buildChunkMesh(targetCx, targetCz);
+                    }
+                }
+            }
+
+            // Cleanup Out-of-Bounds Chunk Buffers (Unloading trailing map sectors from scene graph)
+            Object.keys(activeChunks).forEach(key => {
+                if (!activeKeysThisFrame.has(key)) {
+                    scene.remove(activeChunks[key]);
+                    activeChunks[key].geometry.dispose();
+                    delete activeChunks[key];
+                }
+            });
+
+            document.getElementById('stat-chunks').innerText = `Rendered Chunks: ${Object.keys(activeChunks).length}`;
         }
 
-        // --- Collision System Mechanics ---
-        function checkCollisions(pos) {
-            let mX = Math.floor(pos.x - PLAYER_RADIUS), pX = Math.floor(pos.x + PLAYER_RADIUS);
-            let mZ = Math.floor(pos.z - PLAYER_RADIUS), pZ = Math.floor(pos.z + PLAYER_RADIUS);
-            let mY = Math.floor(pos.y - PLAYER_HEIGHT), pY = Math.floor(pos.y);
+        // --- VELOCITY SEPARATED BOUNDING BOX COLLISION DETECTOR ---
+        function evaluateCollisions(predictedPos) {
+            const boundMinX = Math.floor(predictedPos.x - PLAYER_RADIUS);
+            const boundMaxX = Math.floor(predictedPos.x + PLAYER_RADIUS);
+            const boundMinZ = Math.floor(predictedPos.z - PLAYER_RADIUS);
+            const boundMaxZ = Math.floor(predictedPos.z + PLAYER_RADIUS);
+            const boundMinY = Math.floor(predictedPos.y - PLAYER_HEIGHT);
+            const boundMaxY = Math.floor(predictedPos.y);
 
-            for(let x=mX; x<=pX; x++) {
-                for(let y=mY; y<=pY; y++) {
-                    for(let z=mZ; z<=pZ; z++) {
-                        let b = worldData[`${x},${y},${z}`];
-                        if(b && blockRegistry[b].solid) return true;
+            for (let x = boundMinX; x <= boundMaxX; x++) {
+                for (let y = boundMinY; y <= boundMaxY; y++) {
+                    for (let z = boundMinZ; z <= boundMaxZ; z++) {
+                        const targetingId = globalWorldMap[`${x},${y},${z}`];
+                        if (targetingId && BlockRegistry[targetingId].solid) {
+                            return true; // Dense object overlap detected
+                        }
                     }
                 }
             }
             return false;
         }
 
-        // --- Block Interaction Handlers ---
-        function handleInteraction(isDestroy) {
-            if(!controls.isLocked) return;
-            const ray = new THREE.Raycaster();
-            ray.setFromCamera(new THREE.Vector2(0,0), camera);
+        // --- INTERACTION RAYCAST CONTROLLER ---
+        function executeVoxelInteraction(isBreakingAction) {
+            if (!controls.isLocked) return;
 
-            // Create temporary flat items targets array for math distance ray interception matches
-            let hitTarget = null;
-            let closestDist = 6; // Reach limit range
+            const targetRaycaster = new THREE.Raycaster();
+            targetRaycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
 
-            Object.keys(worldData).forEach(key => {
-                let coords = key.split(',').map(Number);
-                let dist = camera.position.distanceTo(new THREE.Vector3(coords[0], coords[1], coords[2]));
-                if(dist < closestDist) {
-                    let intersects = ray.intersectBox(new THREE.Box3(
-                        new THREE.Vector3(coords[0]-0.5, coords[1]-0.5, coords[2]-0.5),
-                        new THREE.Vector3(coords[0]+0.5, coords[1]+0.5, coords[2]+0.5)
+            let targetedVoxel = null;
+            let checkLimitDistance = 5.5;
+
+            // Mathematical lookup loop over close proximity voxel blocks keys
+            Object.keys(globalWorldMap).forEach(key => {
+                if (key.includes("_loaded")) return;
+                const parseCoords = key.split(',').map(Number);
+                const vectorLoc = new THREE.Vector3(parseCoords[0], parseCoords[1], parseCoords[2]);
+                const distanceMetric = camera.position.distanceTo(vectorLoc);
+
+                if (distanceMetric < checkLimitDistance) {
+                    const boundingBoxInterception = targetRaycaster.intersectBox(new THREE.Box3(
+                        new THREE.Vector3(parseCoords[0] - 0.5, parseCoords[1] - 0.5, parseCoords[2] - 0.5),
+                        new THREE.Vector3(parseCoords[0] + 0.5, parseCoords[1] + 0.5, parseCoords[2] + 0.5)
                     ), new THREE.Vector3());
-                    if(intersects) {
-                        closestDist = dist;
-                        hitTarget = { coords: coords, rayHit: intersects };
+
+                    if (boundingBoxInterception) {
+                        checkLimitDistance = distanceMetric;
+                        targetedVoxel = parseCoords;
                     }
                 }
             });
 
-            if(hitTarget) {
-                let cx = hitTarget.coords[0];
-                let cy = hitTarget.coords[1];
-                let cz = hitTarget.coords[2];
+            if (targetedVoxel) {
+                const vx = targetedVoxel[0], vy = targetedVoxel[1], vz = targetedVoxel[2];
 
-                if(isDestroy) {
-                    updateBlockAtPosition(cx, cy, cz, 0);
+                if (isBreakingAction) {
+                    delete globalWorldMap[`${vx},${vy},${vz}`];
+                    refreshTargetChunkMeshes(vx, vz);
                 } else {
-                    // Place: Calculate closest geometric surface normal side vector face manually
-                    let p = camera.position;
-                    let nx = 0, ny = 0, nz = 0;
-                    let dx = p.x - cx, dy = p.y - cy, dz = p.z - cz;
-                    if(Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > Math.abs(dz)) nx = dx > 0 ? 1 : -1;
-                    else if(Math.abs(dy) > Math.abs(dx) && Math.abs(dy) > Math.abs(dz)) ny = dy > 0 ? 1 : -1;
-                    else nz = dz > 0 ? 1 : -1;
+                    // Place: compute target vector face orientation positioning manually
+                    const cam = camera.position;
+                    let offX = 0, offY = 0, offZ = 0;
+                    const diffX = cam.x - vx, diffY = cam.y - vy, diffZ = cam.z - vz;
 
-                    updateBlockAtPosition(cx+nx, cy+ny, cz+nz, hotbarIds[activeSlotIndex]);
+                    if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > Math.abs(diffZ)) offX = diffX > 0 ? 1 : -1;
+                    else if (Math.abs(diffY) > Math.abs(diffX) && Math.abs(diffY) > Math.abs(diffZ)) offY = diffY > 0 ? 1 : -1;
+                    else offZ = diffZ > 0 ? 1 : -1;
+
+                    const placeX = vx + offX, placeY = vy + offY, placeZ = vz + offZ;
+                    
+                    // Body frame blocking safety verification check
+                    const pPos = controls.getObject().position;
+                    if (Math.abs(placeX - Math.round(pPos.x)) < 1 && 
+                        Math.abs(placeZ - Math.round(pPos.z)) < 1 && 
+                        (placeY === Math.floor(pPos.y) || placeY === Math.floor(pPos.y - PLAYER_HEIGHT))) {
+                        return;
+                    }
+
+                    globalWorldMap[`${placeX},${placeY},${placeZ}`] = hotbarSelection[currentHotbarIndex];
+                    refreshTargetChunkMeshes(placeX, placeZ);
                 }
             }
         }
 
-        // --- Interface UI Elements Renderer Systems ---
-        function buildUI() {
-            const bar = document.getElementById('hotbar');
-            bar.innerHTML = '';
-            hotbarIds.forEach((id, idx) => {
-                let slot = document.createElement('div');
-                slot.className = `slot ${idx === activeSlotIndex ? 'active' : ''}`;
-                slot.style.backgroundColor = '#' + blockRegistry[id].color.toString(16);
-                slot.innerText = blockRegistry[id].name;
-                slot.onclick = () => { activeSlotIndex = idx; buildUI(); };
-                bar.appendChild(slot);
+        function refreshTargetChunkMeshes(worldX, worldZ) {
+            const coords = getChunkCoordinates(worldX, worldZ);
+            buildChunkMesh(coords.cx, coords.cz);
+            
+            // Re-render boundary margins chunks if blocks were modified near seams borders
+            if (worldX % CHUNK_SIZE === 0) buildChunkMesh(coords.cx - 1, coords.cz);
+            if (worldX % CHUNK_SIZE === CHUNK_SIZE - 1) buildChunkMesh(coords.cx + 1, coords.cz);
+            if (worldZ % CHUNK_SIZE === 0) buildChunkMesh(coords.cx, coords.cz - 1);
+            if (worldZ % CHUNK_SIZE === CHUNK_SIZE - 1) buildChunkMesh(coords.cx, coords.cz + 1);
+        }
+
+        // --- USER INTERFACE BUILD ARCHITECTS ---
+        function buildUserInterface() {
+            const wrapper = document.getElementById('hotbar-wrapper');
+            wrapper.innerHTML = '';
+            hotbarSelection.forEach((blockId, idx) => {
+                const element = document.createElement('div');
+                element.className = `hotbar-slot ${idx === currentHotbarIndex ? 'active' : ''}`;
+                element.style.backgroundColor = '#' + BlockRegistry[blockId].color.toString(16);
+                element.innerText = BlockRegistry[blockId].name.split(' ')[0];
+                element.onclick = () => { currentHotbarIndex = idx; buildUserInterface(); };
+                wrapper.appendChild(element);
             });
 
-            // Populate Creative Inventory Interface
-            const hub = document.getElementById('creative-hub');
-            Object.keys(blockRegistry).forEach(id => {
-                let bId = Number(id);
-                let item = document.createElement('div');
-                item.className = 'slot';
-                item.style.backgroundColor = '#' + blockRegistry[bId].color.toString(16);
-                item.innerText = blockRegistry[bId].name;
-                item.onclick = () => {
-                    hotbarIds[activeSlotIndex] = bId;
-                    buildUI();
-                    toggleHub();
+            const creativeMenu = document.getElementById('creative-menu');
+            Object.keys(BlockRegistry).forEach(id => {
+                const bId = Number(id);
+                const gridItem = document.createElement('div');
+                gridItem.className = 'hotbar-slot';
+                gridItem.style.backgroundColor = '#' + BlockRegistry[bId].color.toString(16);
+                gridItem.innerText = BlockRegistry[bId].name.split(' ')[0];
+                gridItem.onclick = () => {
+                    hotbarSelection[currentHotbarIndex] = bId;
+                    buildUserInterface();
+                    toggleCreativeHubDisplay();
                 };
-                hub.appendChild(item);
+                creativeMenu.appendChild(gridItem);
             });
         }
 
-        function toggleHub() {
-            hubOpen = !hubOpen;
-            const hub = document.getElementById('creative-hub');
-            if(hubOpen) {
-                hub.style.display = 'flex';
+        function toggleCreativeHubDisplay() {
+            isHubOpen = !isHubOpen;
+            const menuElement = document.getElementById('creative-menu');
+            if (isHubOpen) {
+                menuElement.style.display = 'flex';
                 controls.unlock();
             } else {
-                hub.style.display = 'none';
+                menuElement.style.display = 'none';
                 controls.lock();
             }
         }
 
-        // --- Inputs Configurations ---
-        function setupControls() {
+        // --- EVENT CONTROLLERS ---
+        function setupEventBindings() {
             document.addEventListener('keydown', (e) => {
-                if(e.code === 'KeyE') { toggleHub(); e.preventDefault(); return; }
-                if(hubOpen) return;
+                if (e.code === 'KeyE') { toggleCreativeHubDisplay(); e.preventDefault(); return; }
+                if (isHubOpen) return;
                 switch (e.code) {
-                    case 'KeyW': moveF = true; break;
-                    case 'KeyS': moveB = true; break;
-                    case 'KeyA': moveL = true; break;
-                    case 'KeyD': moveR = true; break;
-                    case 'Space': if(canJump) { velocity.y = 6.2; canJump = false; } break;
-                    case 'Digit1': activeSlotIndex = 0; buildUI(); break;
-                    case 'Digit2': activeSlotIndex = 1; buildUI(); break;
-                    case 'Digit3': activeSlotIndex = 2; buildUI(); break;
-                    case 'Digit4': activeSlotIndex = 3; buildUI(); break;
-                    case 'Digit5': activeSlotIndex = 4; buildUI(); break;
+                    case 'KeyW': keys.Forward = true; break;
+                    case 'KeyS': keys.Backward = true; break;
+                    case 'KeyA': keys.Left = true; break;
+                    case 'KeyD': keys.Right = true; break;
+                    case 'Space': 
+                        if (canPlayerJump) { playerVelocity.y = 6.8; canPlayerJump = false; } 
+                        break;
+                    case 'Digit1': currentHotbarIndex = 0; buildUserInterface(); break;
+                    case 'Digit2': currentHotbarIndex = 1; buildUserInterface(); break;
+                    case 'Digit3': currentHotbarIndex = 2; buildUserInterface(); break;
+                    case 'Digit4': currentHotbarIndex = 3; buildUserInterface(); break;
+                    case 'Digit5': currentHotbarIndex = 4; buildUserInterface(); break;
                 }
             });
 
             document.addEventListener('keyup', (e) => {
                 switch (e.code) {
-                    case 'KeyW': moveF = false; break;
-                    case 'KeyS': moveB = false; break;
-                    case 'KeyA': moveL = false; break;
-                    case 'KeyD': moveR = false; break;
+                    case 'KeyW': keys.Forward = false; break;
+                    case 'KeyS': keys.Backward = false; break;
+                    case 'KeyA': keys.Left = false; break;
+                    case 'KeyD': keys.Right = false; break;
                 }
             });
 
             document.addEventListener('mousedown', (e) => {
-                if(hubOpen) return;
-                if(e.button === 0) handleInteraction(true);
-                if(e.button === 2) handleInteraction(false);
+                if (isHubOpen) return;
+                if (e.button === 0) executeVoxelInteraction(true);
+                if (e.button === 2) executeVoxelInteraction(false);
             });
         }
 
-        function onResize() {
+        function onWindowResize() {
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
             renderer.setSize(window.innerWidth, window.innerHeight);
         }
 
-        // --- Main Frame Game Loop ---
-        function animate() {
-            requestAnimationFrame(animate);
+        // --- MAIN ENGINE PERFORMANCE TICK RUNTIME ---
+        function animateLoop() {
+            requestAnimationFrame(animateLoop);
 
-            if (controls.isLocked && !hubOpen) {
-                const delta = Math.min(clock.getDelta(), 0.1);
+            if (controls.isLocked && !isHubOpen) {
+                const delta = Math.min(frameClock.getDelta(), 0.08);
 
-                velocity.y -= 18.0 * delta; // Gravity
+                playerVelocity.y -= 20.0 * delta; // Downward gravity acceleration scalar force
 
-                let dirX = Number(moveR) - Number(moveL);
-                let dirZ = Number(moveF) - Number(moveB);
-                
-                const camDir = new THREE.Vector3();
-                camera.getWorldDirection(camDir);
-                camDir.y = 0; camDir.normalize();
-                const camRight = new THREE.Vector3().crossVectors(camDir, camera.up).normalize().negate();
+                const moveStateZ = Number(keys.Forward) - Number(keys.Backward);
+                const moveStateX = Number(keys.Right) - Number(keys.Left);
 
-                const moveVector = new THREE.Vector3();
-                moveVector.addScaledVector(camDir, dirZ).addScaledVector(camRight, dirX).normalize().multiplyScalar(5.0 * delta);
+                const currentCameraDirection = new THREE.Vector3();
+                camera.getWorldDirection(currentCameraDirection);
+                currentCameraDirection.y = 0;
+                currentCameraDirection.normalize();
 
-                const playerObj = controls.getObject();
+                const currentCameraRightAxis = new THREE.Vector3().crossVectors(currentCameraDirection, camera.up).normalize().negate();
 
-                playerObj.position.x += moveVector.x;
-                if(checkCollisions(playerObj.position)) playerObj.position.x -= moveVector.x;
+                const compositeMovementVector = new THREE.Vector3();
+                compositeMovementVector.addScaledVector(currentCameraDirection, moveStateZ);
+                compositeMovementVector.addScaledVector(currentCameraRightAxis, moveStateX);
+                compositeMovementVector.normalize().multiplyScalar(5.2 * delta);
 
-                playerObj.position.z += moveVector.z;
-                if(checkCollisions(playerObj.position)) playerObj.position.z -= moveVector.z;
+                const controlledPlayerObject = controls.getObject();
 
-                playerObj.position.y += velocity.y * delta;
-                if(checkCollisions(playerObj.position)) {
-                    if(velocity.y < 0) canJump = true;
-                    playerObj.position.y -= velocity.y * delta;
-                    velocity.y = 0;
+                // Axis Separated Collision Step Loops
+                controlledPlayerObject.position.x += compositeMovementVector.x;
+                if (evaluateCollisions(controlledPlayerObject.position)) controlledPlayerObject.position.x -= compositeMovementVector.x;
+
+                controlledPlayerObject.position.z += compositeMovementVector.z;
+                if (evaluateCollisions(controlledPlayerObject.position)) controlledPlayerObject.position.z -= compositeMovementVector.z;
+
+                controlledPlayerObject.position.y += playerVelocity.y * delta;
+                if (evaluateCollisions(controlledPlayerObject.position)) {
+                    if (playerVelocity.y < 0) canPlayerJump = true; // Floor land detection status check flag reset
+                    controlledPlayerObject.position.y -= playerVelocity.y * delta;
+                    playerVelocity.y = 0;
                 }
 
-                if(playerObj.position.y < -10) { playerObj.position.set(24, 15, 24); velocity.y = 0; }
+                // Void reset trigger failsafe protector
+                if (controlledPlayerObject.position.y < -15) {
+                    controlledPlayerObject.position.set(16, 25, 16);
+                    playerVelocity.y = 0;
+                }
+
+                // Refresh HUD Tracker Metrics UI
+                document.getElementById('stat-coords').innerText = `XYZ: ${Math.floor(controlledPlayerObject.position.x)}, ${Math.floor(controlledPlayerObject.position.y)}, ${Math.floor(controlledPlayerObject.position.z)}`;
+
+                // Stream world chunks shifts based on position updates parameters
+                manageDynamicChunks();
             }
 
             renderer.render(scene, camera);
