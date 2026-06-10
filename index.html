@@ -3,13 +3,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>JS Voxel Prototype</title>
+    <title>Advanced JS Voxel Engine</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
 <body>
     <div id="crosshair">+</div>
-    <div id="instructions">Click to Play (Use WASD to move, Mouse to look)</div>
+    <div id="instructions">Click Screen to Play (WASD to Move, 1-9 to Select Hotbar)</div>
+    
+    <div id="gui-container">
+        <div id="item-label">Dirt</div>
+        <div id="hotbar">
+            <div class="slot active" data-slot="0"><div class="item dirt"></div></div>
+            <div class="slot" data-slot="1"><div class="item stone"></div></div>
+            <div class="slot" data-slot="2"><div class="item grass"></div></div>
+            <div class="slot" data-slot="3"><div class="item wood"></div></div>
+            <div class="slot" data-slot="4"></div>
+            <div class="slot" data-slot="5"></div>
+            <div class="slot" data-slot="6"></div>
+            <div class="slot" data-slot="7"></div>
+            <div class="slot" data-slot="8"></div>
+        </div>
+    </div>
 
     <script type="module" src="./src/main.js"></script>
 </body>
