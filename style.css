@@ -1,1 +1,37 @@
+body {
+    margin: 0;
+    overflow: hidden;
+    background-color: #78a7ff; /* Sky color */
+    font-family: sans-serif;
+}
 
+canvas {
+    display: block;
+    width: 100vw;
+    height: 100vh;
+}
+
+#crosshair {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: white;
+    font-size: 24px;
+    font-weight: light;
+    pointer-events: none; /* Lets clicks pass through to the game */
+    user-select: none;
+}
+
+#instructions {
+    position: absolute;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: white;
+    background: rgba(0, 0, 0, 0.5);
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    user-select: none;
+}
