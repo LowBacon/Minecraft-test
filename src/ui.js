@@ -2,35 +2,29 @@ export class UIManager {
     constructor() {
         this.slots = document.querySelectorAll('.slot');
         this.label = document.getElementById('item-label');
-        this.itemNames = ['Dirt', 'Stone', 'Grass Blocks', 'Wood Plank', '', '', '', '', ''];
-        this.activeSlotIndex = 0;
+        this.itemNames = ['Grass Block', 'Dirt Layer', 'Cobblestone', 'Oak Planks'];
+        this.activeIndex = 0;
         
-        this.initListeners();
-        this.updateUI();
+        this.init();
     }
 
-    initListeners() {
+    init() {
         document.addEventListener('keydown', (e) => {
-            // Check if key pressed is between 1 and 9
-            if (/^[1-9]$/.test(e.key)) {
-                this.activeSlotIndex = parseInt(e.key) - 1;
-                this.updateUI();
+            if (/^[1-4]$/.test(e.key)) {
+                this.activeIndex = parseInt(e.key) - 1;
+                this.update();
             }
         });
     }
 
-    updateUI() {
-        this.slots.forEach((slot, idx) => {
-            if (idx === this.activeSlotIndex) {
+    update() {
+        this.slots.forEach((slot, i) => {
+            if (i === this.activeIndex) {
                 slot.classList.add('active');
             } else {
                 slot.classList.remove('active');
             }
         });
-
-        // Display selection text label cleanly
-        const name = this.itemNames[this.activeSlotIndex];
-        this.label.textContent = name ? name : "";
-        this.label.style.opacity = name ? "1" : "0";
+        this.label.textContent = this.itemNames[this.activeIndex];
     }
 }
