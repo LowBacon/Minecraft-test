@@ -11,70 +11,48 @@ export class SimpleControls {
         this.velocity = new THREE.Vector3();
         this.direction = new THREE.Vector3();
 
-        this.pitchObject = new THREE.Object3D();
-        this.pitchObject.add(camera);
-
+        this.pitchObject = new THREE.Object3D().add(camera);
         this.yawObject = new THREE.Object3D();
-        this.yawObject.position.y = 2; // Camera height
+        this.yawObject.position.set(16, 20, 16); // Spawn point safely high up
         this.yawObject.add(this.pitchObject);
 
         this.initListeners();
     }
 
     initListeners() {
-        const instructions = document.getElementById('instructions');
-
-        instructions.addEventListener('click', () => {
+        document.getElementById('instructions').addEventListener('click', () => {
             this.domElement.requestPointerLock();
         });
 
         document.addEventListener('pointerlockchange', () => {
-            if (document.pointerLockElement === this.domElement) {
-                instructions.style.display = 'none';
-            } else {
-                instructions.style.display = 'block';
-            }
+            document.getElementById('instructions').style.display = 
+                document.pointerLockElement === this.domElement ? 'none' : 'block';
         });
 
-        document.addEventListener('mousemove', (event) => {
+        document.addEventListener('mousemove', (e) => {
             if (document.pointerLockElement !== this.domElement) return;
-
-            const movementX = event.movementX || 0;
-            const movementY = event.movementY || 0;
-
-            this.yawObject.rotation.y -= movementX * 0.002;
-            this.pitchObject.rotation.x -= movementY * 0.002;
-
-            // Clamp looking up and down so you don't flip upside down
-            this.pitchObject.rotation.x = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, this.pitchObject.rotation.x));
+            this.yawObject.rotation.y -= e.movementX * 0.0025;
+            this.pitchObject.rotation.x -= e.movementY * 0.0025;
+            this.pitchObject.rotation.x = Math.max(-Math.PI/2, Math.min(Math.PI/2, this.pitchObject.rotation.x));
         });
 
-        const onKeyDown = (event) => {
-            switch (event.code) {
-                case 'KeyW': this.moveForward = true; break;
-                case 'KeyS': this.moveBackward = true; break;
-                case 'KeyA': this.moveLeft = true; break;
-                case 'KeyD': this.moveRight = true; break;
+        const toggleKey = (code, isDown) => {
+            switch (code) {
+                case 'KeyW': this.moveForward = isDown; break;
+                case 'KeyS': this.moveBackward = isDown; break;
+                case 'KeyA': this.moveLeft = isDown; break;
+                case 'KeyD': this.moveRight = isDown; break;
             }
         };
 
-        const onKeyUp = (event) => {
-            switch (event.code) {
-                case 'KeyW': this.moveForward = false; break;
-                case 'KeyS': this.moveBackward = false; break;
-                case 'KeyA': this.moveLeft = false; break;
-                case 'KeyD': this.moveRight = false; break;
-            }
-        };
-
-        document.addEventListener('keydown', onKeyDown);
-        document.addEventListener('keyup', onKeyUp);
+        document.addEventListener('keydown', (e) => toggleKey(e.code, true));
+        document.addEventListener('keyup', (e) => toggleKey(e.code, false));
     }
 
     update(delta) {
         if (document.pointerLockElement !== this.domElement) return;
 
-        const speed = 10.0;
+        const speed = 14.0;
         this.velocity.x -= this.velocity.x * 10.0 * delta;
         this.velocity.z -= this.velocity.z * 10.0 * delta;
 
@@ -89,7 +67,5 @@ export class SimpleControls {
         this.yawObject.translateZ(this.velocity.z * delta);
     }
 
-    getObject() {
-        return this.yawObject;
-    }
+    getObject() { return this.yawObject; }
 }
